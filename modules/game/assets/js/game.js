@@ -142,54 +142,6 @@ const playerDirection = new THREE.Vector3();
 let playerOnFloor = false;
 let mouseTime = 0;
 
-const loadBackgroundNightSky = async () => {
-  const skyVertexShader = await fileLoader.loadAsync(`/shaders/sky.vert`);
-  const skyFragmentShader = await fileLoader.loadAsync(`/shaders/sky.frag`);
-
-  const loader = new THREE.CubeTextureLoader();
-  loader.setPath(assetsPath);
-
-  const background = await loader.loadAsync([
-    "/sky/Cold_Sunset__Cam_2_Left+X.png",
-    "/sky/Cold_Sunset__Cam_3_Right-X.png",
-    "/sky/Cold_Sunset__Cam_4_Up+Y.png",
-    "/sky/Cold_Sunset__Cam_5_Down-Y.png",
-    "/sky/Cold_Sunset__Cam_0_Front+Z.png",
-    "/sky/Cold_Sunset__Cam_1_Back-Z.png",
-  ]);
-
-  const stars = await loader.loadAsync([
-    "/sky/space-posx.jpg",
-    "/sky/space-negx.jpg",
-    "/sky/space-posy.jpg",
-    "/sky/space-negy.jpg",
-    "/sky/space-posz.jpg",
-    "/sky/space-negz.jpg",
-  ]);
-
-  const skyGeo = new THREE.SphereGeometry(1000, 32, 15);
-  const skyMat = new THREE.ShaderMaterial({
-    uniforms: {
-      background: {
-        value: background,
-      },
-      stars: {
-        value: stars,
-      },
-    },
-    vertexShader: skyVertexShader,
-    fragmentShader: skyFragmentShader,
-    side: THREE.AmbientLightBackSide,
-  });
-
-  return new THREE.Mesh(skyGeo, skyMat);
-};
-
-loadBackgroundNightSky().then((sky) => {
-  scene.add(sky);
-});
-
-
 gltfLoader.load(`/maps/collision-world.glb`, (gltf) => {
   scene.add(gltf.scene);
 
