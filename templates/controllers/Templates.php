@@ -10,6 +10,10 @@ class Templates extends Trongate {
     function public($data): void {
         $data['additional_includes_top'] = $this->_build_additional_includes($data['additional_includes_top'] ?? []);
         $data['additional_includes_btm'] = $this->_build_additional_includes($data['additional_includes_btm'] ?? []);
+
+        if (empty($data['lang'])) {
+            $data['lang'] = $_GET['lang'] ?? Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']) ?? 'da';
+        }
         
         load('public', $data);
     }

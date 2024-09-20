@@ -3,7 +3,8 @@
   --primary-dark: #38678f;
   --primary-darker: #294d6b;
   --primary-color: #fff;
-  --secondary: #ff0000;
+  --secondary: hsl(259 30% 20%);
+  --secondary-darken: rgb(167 139 250 / 0);
   --border: #c5c5c5;
   --alt: #fff;
   --modal-margin-top: 12vh;

@@ -14,7 +14,7 @@
         echo form_label('Key');
         echo form_input('key', $key, array("placeholder" => "Enter Key"));
         echo form_label('Value');
-        echo form_input('value', $value, array("placeholder" => "Enter Value"));
+        echo form_textarea('value', $value, array("placeholder" => "Enter Value"));
         echo form_submit('submit', 'Submit');
         echo anchor($cancel_url, 'Cancel', array('class' => 'button alt'));
         echo form_close();

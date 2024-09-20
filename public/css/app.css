@@ -1,6 +1,32 @@
 .xdebug-var-dump {
   z-index: 10;
 }
+
+a {
+  font-size: 1.125rem;
+  line-height: 2rem;
+  color: var(--alt);
+  text-decoration: none;
+  background-image: linear-gradient(to right, #9f7aea, #bb86fc, #f472b6);
+  background-size: 0% 2px;
+  background-position: left bottom;
+  background-repeat: no-repeat;
+  transition: background-size 0.5s ease-out;
+}
+
+a:hover {
+  background-size: 100% 2px;
+}
+
+a span {
+  color: #1d4ed8;
+  transition: color 0.5s ease;
+}
+
+a:hover span {
+  color: #f43f5e;
+}
+
 body {
   background: rgb(21, 13, 38);
   min-height: 100vh;
@@ -24,20 +50,6 @@ header {
     backdrop-filter: blur(8px);
     padding-left: 1rem;
     padding-right: 1rem;
-}
-
-header,
-header a,
-footer,
-footer a {
-  color: #eee;
-  text-decoration: none;
-}
-
-header a:hover,
-footer a:hover {
-  color: #fff;
-  text-decoration: underline;
 }
 
 .logo {
@@ -85,6 +97,18 @@ header .fa {
 
 #top-nav .fa {
   display: none;
+}
+
+form#language_form label {
+  display: flex;
+  align-items: center;
+  margin: 0 auto;
+}
+
+form#language_form select {
+  background: transparent;
+  border: none;
+  color: #eee;
 }
 
 .wrapper {

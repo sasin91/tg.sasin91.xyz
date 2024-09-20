@@ -16,16 +16,12 @@ class Localizations extends Trongate {
 
     public function _translator(string $language = 'da')
     {
-        $module = isset($this->current_module) ? $this->current_module : segment(1);
-
-        if (empty($module)) {
-            $controller_basename = basename(str_replace('\\', '/', debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0]['file']));
-            $controller_classname = str_replace('.php', '', $controller_basename);
-            $module = strtolower($controller_classname);
-        }
+        $controller_basename = basename(str_replace('\\', '/', debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0]['file']));
+        $controller_classname = str_replace('.php', '', $controller_basename);
+        $module = strtolower($controller_classname);
 
         $locale = $this->compose_locale($language);
-        
+
         $dbh = $this->model->get_PDO();
         $stmt = $dbh->prepare(
             'SELECT `key`, `value` FROM `localizations` WHERE `module` = :module AND `locale` = :locale'
@@ -94,12 +90,28 @@ class Localizations extends Trongate {
         }
 
         $data['form_location'] = BASE_URL.'localizations/submit/'.$update_id;
-        $data['modules'] = [
-            'welcome' => 'Welcome'
-        ];
+        $data['modules'] = $this->discoverModules();
         $data['locales'] = array_flip(self::LOCALE_MAPPINGS);
         $data['view_file'] = 'create';
         $this->template('admin', $data);
+    }
+
+    private function discoverModules(): array
+    {
+        $paths = glob(APPPATH . 'modules/*', GLOB_ONLYDIR);
+
+        $modules = [];
+
+        foreach ($paths as $path) {
+            $module_name = substr($path, strrpos($path, '/') + 1);
+
+            $nice_name = str_replace('_', ' ', $module_name);
+            $nice_name = mb_convert_case($nice_name, MB_CASE_TITLE, 'UTF-8');
+
+            $modules[$module_name] = $nice_name;
+        }
+
+        return array_reverse($modules);
     }
 
     /**
@@ -121,13 +133,13 @@ class Localizations extends Trongate {
             $sql = 'select * from localizations
             WHERE module LIKE :module
             OR locale LIKE :locale
-            OR key LIKE :key
+            OR `key` LIKE :key
             OR value LIKE :value
-            ORDER BY created desc';
+            ORDER BY id desc';
             $all_rows = $this->model->query_bind($sql, $params, 'object');
         } else {
             $data['headline'] = 'Manage Localizations';
-            $all_rows = $this->model->get('created desc');
+            $all_rows = $this->model->get('`id` desc');
         }
 
         $pagination_data['total_rows'] = count($all_rows);
@@ -189,7 +201,7 @@ class Localizations extends Trongate {
             $this->validation->set_rules('module', 'Module', 'required|min_length[2]|max_length[255]');
             $this->validation->set_rules('locale', 'Locale', 'required|min_length[2]|max_length[255]|callback__in_locale_mappings');
             $this->validation->set_rules('key', 'Key', 'required|min_length[2]|max_length[255]');
-            $this->validation->set_rules('value', 'Value', 'required|min_length[2]|max_length[255]');
+            $this->validation->set_rules('value', 'Value', 'required|min_length[2]|max_length[65534]');
 
             $result = $this->validation->run();
 

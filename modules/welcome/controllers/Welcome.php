@@ -15,7 +15,7 @@ class Welcome extends Trongate {
 
 		$this->module('localizations');
 		$data['t'] = $this->localizations->_translator(
-			Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']) ?? 'da'
+			$_GET['lang'] ?? Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']) ?? 'da'
 		);
 
         $this->template('public', $data);
