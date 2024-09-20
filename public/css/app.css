@@ -1,3 +1,6 @@
+.xdebug-var-dump {
+  z-index: 10;
+}
 body {
   background: rgb(21, 13, 38);
   min-height: 100vh;
@@ -103,6 +106,16 @@ main {
 
 article {
     isolation: isolate;
+}
+
+.text-fancy {
+  background-clip: text;
+  background-image: linear-gradient(to right, #a855f7, #f9a8d4);
+  border-color: rgb(89, 70, 129);
+  border-style: solid;
+  border-width: 0px;
+  box-sizing: border-box;
+  color: rgba(0, 0, 0, 0);
 }
 
 footer {

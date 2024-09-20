@@ -13,14 +13,10 @@ class Welcome extends Trongate {
 			'welcome_module/css/welcome.css'
 		];
 
-		$this->module('localization');
-		$this->localization->_load_language(
-			$this->localization->_get_language_from_header()
+		$this->module('localizations');
+		$data['t'] = $this->localizations->_translator(
+			Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']) ?? 'da'
 		);
-
-		$translations = [
-			'da_DK' => 
-		];
 
         $this->template('public', $data);
 	}

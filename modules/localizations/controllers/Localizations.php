@@ -4,7 +4,7 @@ class Localizations extends Trongate {
     private $default_limit = 20;
     private $per_page_options = array(10, 20, 50, 100);    
 
-        /**
+    /**
      * Maps a string of locales to their respective languages.
      *
      * @var array
@@ -14,34 +14,44 @@ class Localizations extends Trongate {
         'en' => 'en_US'
     ];
 
-    /**
-     * The fallback locale to use when no locale is specified.
-     *
-     * @var string
-     */
-    public string $locale = 'da_DK';
-
-    /**
-     * INTL NumberFormatter instance for currency formatting.
-     *
-     * @var NumberFormatter|null
-     */
-    public ?NumberFormatter $currencyFormatter = null;
-
-    /**
-     * The currency code to use for currency formatting.
-     *
-     * @var string
-     */
-    public string $currency = 'DKK';
-
-    public function _load_language(string $language): static
+    public function _translator(string $language = 'da')
     {
-        $this->locale = $this->compose_locale($language);
-        $this->currencyFormatter = new NumberFormatter($this->locale, NumberFormatter::CURRENCY);
-        $this->currency = $currency ?? $this->currencyFormatter->getTextAttribute(NumberFormatter::CURRENCY_CODE);
+        $module = isset($this->current_module) ? $this->current_module : segment(1);
 
-        return $this;
+        if (empty($module)) {
+            $controller_basename = basename(str_replace('\\', '/', debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0]['file']));
+            $controller_classname = str_replace('.php', '', $controller_basename);
+            $module = strtolower($controller_classname);
+        }
+
+        $locale = $this->compose_locale($language);
+        
+        $dbh = $this->model->get_PDO();
+        $stmt = $dbh->prepare(
+            'SELECT `key`, `value` FROM `localizations` WHERE `module` = :module AND `locale` = :locale'
+        );
+        $stmt->bindParam(':module', $module);
+        $stmt->bindParam(':locale', $locale);
+
+        $stmt->execute();
+
+        $translationsMap = [];
+        foreach ($stmt->getIterator() as $translation) {
+            $translationsMap[$translation['key']] = $translation['value'];
+        }
+
+        return function (string $key, ?string $default = null) use($translationsMap): string
+        {
+            if ($default === null) {
+                $default = $key;
+            }
+
+            if (empty($key)) {
+                return $default;
+            }
+
+            return $translationsMap[$key] ?? $default;
+        };
     }
 
     private function compose_locale(string $language): ?string
@@ -55,13 +65,6 @@ class Localizations extends Trongate {
             'script' => Locale::getScript($language),
             'region' => Locale::getRegion($language),
         ]);
-
-        return $locale ?: null;
-    }
-
-    public function _get_language_from_header(): ?string
-    {
-        $locale = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 
         return $locale ?: null;
     }
@@ -91,6 +94,10 @@ class Localizations extends Trongate {
         }
 
         $data['form_location'] = BASE_URL.'localizations/submit/'.$update_id;
+        $data['modules'] = [
+            'welcome' => 'Welcome'
+        ];
+        $data['locales'] = array_flip(self::LOCALE_MAPPINGS);
         $data['view_file'] = 'create';
         $this->template('admin', $data);
     }
@@ -180,11 +187,9 @@ class Localizations extends Trongate {
         if ($submit === 'Submit') {
 
             $this->validation->set_rules('module', 'Module', 'required|min_length[2]|max_length[255]');
-            $this->validation->set_rules('locale', 'Locale', 'required|min_length[2]|max_length[255]');
+            $this->validation->set_rules('locale', 'Locale', 'required|min_length[2]|max_length[255]|callback__in_locale_mappings');
             $this->validation->set_rules('key', 'Key', 'required|min_length[2]|max_length[255]');
             $this->validation->set_rules('value', 'Value', 'required|min_length[2]|max_length[255]');
-            $this->validation->set_rules('created', 'Created', 'required|valid_datetimepicker_us');
-            $this->validation->set_rules('updated', 'Updated', 'required|valid_datetimepicker_us');
 
             $result = $this->validation->run();
 
@@ -192,10 +197,7 @@ class Localizations extends Trongate {
 
                 $update_id = (int) segment(3);
                 $data = $this->get_data_from_post();
-                $data['updated'] = str_replace(' at ', '', $data['updated']);
-                $data['updated'] = date('Y-m-d H:i', strtotime($data['updated']));
-                $data['created'] = str_replace(' at ', '', $data['created']);
-                $data['created'] = date('Y-m-d H:i', strtotime($data['created']));
+                $data['updated'] = date('Y-m-d H:i');
                 
                 if ($update_id>0) {
                     //update an existing record
@@ -203,6 +205,7 @@ class Localizations extends Trongate {
                     $flash_msg = 'The record was successfully updated';
                 } else {
                     //insert the new record
+                    $data['created'] = date('Y-m-d H:i');
                     $update_id = $this->model->insert($data, 'localizations');
                     $flash_msg = 'The record was successfully created';
                 }
@@ -217,6 +220,15 @@ class Localizations extends Trongate {
 
         }
 
+    }
+
+    public function _in_locale_mappings(string $locale)
+    {
+        if (in_array($locale, self::LOCALE_MAPPINGS)) {
+            return true;
+        }
+
+        return 'Locale must be one of [' . implode(', ', self::LOCALE_MAPPINGS) . ']';
     }
 
     /**
@@ -362,9 +374,7 @@ class Localizations extends Trongate {
         $data['module'] = post('module', true);
         $data['locale'] = post('locale', true);
         $data['key'] = post('key', true);
-        $data['value'] = post('value', true);
-        $data['created'] = post('created', true);
-        $data['updated'] = post('updated', true);        
+        $data['value'] = post('value', true);        
         return $data;
     }
 
