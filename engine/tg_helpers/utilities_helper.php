@@ -1,4 +1,8 @@
 <?php
+function get_language(): string {
+    return  $_GET['lang'] ?? Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']) ?? 'da';
+}
+
 /**
  * Outputs the given data as JSON in a prettified format, suitable for debugging and visualization.
  * This function is especially useful during development for inspecting data structures in a readable JSON format directly in the browser. 
