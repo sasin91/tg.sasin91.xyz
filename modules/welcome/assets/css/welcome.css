@@ -1,0 +1,36 @@
+#welcome {
+    min-height: 100svh;
+}
+
+.diagonal-slice {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 50%;
+    z-index: -10;
+    margin-right: -24rem;
+    width: 200%;
+    transform-origin: top right;
+    transform: matrix(1, 0, -0.57735, 1, 0, 0);
+    background: hsl(259 50% 10%);
+    box-shadow: rgb(255, 255, 255) 0px 0px 0px 0px;
+}
+
+#about-me {
+    display: grid;
+    row-gap: 1.5rem;
+    column-gap: 2rem;
+    grid-template-rows: repeat(1, minmax(0, 1fr));
+    margin: 0 auto;
+}
+
+#about-me .text {
+    max-width: 36rem;
+    grid-column-end: 1;
+    grid-row-start: 1;
+}
+
+#about-me .hero-img {
+    aspect-ratio: 6 / 5;
+    object-fit: cover;
+}
