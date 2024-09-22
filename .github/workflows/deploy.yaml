@@ -22,6 +22,11 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
 
+      - name: Disable strict host key checking
+        run: |
+          mkdir -p ~/.ssh
+          echo "StrictHostKeyChecking no" >> ~/.ssh/config
+
       - name: Update config files with secrets and URLs
         run: |
           # Update password in /config/database.php
