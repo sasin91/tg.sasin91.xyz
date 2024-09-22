@@ -1,0 +1,51 @@
+name: Deploy to tg.sasin91.xyz
+on:
+  deploy:
+    main
+jobs:
+  app:
+    name: 🚀 Deploy app
+    runs-on: ubuntu-latest
+    if: ${{ (github.ref == 'refs/heads/main') }}
+
+    steps:
+      - name: 🛑 Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+      
+      - name: Setup PHP with PECL extension
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          #extensions: imagick
+
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Update config files with secrets and URLs
+        run: |
+          # Update password in /config/database.php
+          DATABASE_FILE="./config/database.php"
+          sed -i "s/define('PASSWORD', '');/define('PASSWORD', '${{ secrets.DB_PASSWORD }}');/" $DATABASE_FILE
+
+          # Update URL in /config/config.php
+          CONFIG_FILE="./config/config.php"
+          sed -i "s|http://sasin91.test/|https://tg.sasin91.xyz|g" $CONFIG_FILE
+
+      - name: 🔐 Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: unnecessary
+
+      - name: 📝 Adding Known Hosts
+        run: ssh-keyscan -p 22 -H tg.sasin91.xyz  >> ~/.ssh/known_hosts
+
+      - name: ♻️ Deploy with rsync
+        run: |
+          rsync --quiet --archive --progress --xattrs --delete \
+          --rsync-path="sudo rsync" \
+          --exclude='.git/' \
+          --exclude='.github/' \
+          --exclude='.infra/' \
+          ./ github@tg.sasin91.xyz:/var/www/html
+          ssh github@yourserver 'sudo chown -R caddy:caddy /var/www/html'
