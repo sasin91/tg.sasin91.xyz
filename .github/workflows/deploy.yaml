@@ -48,5 +48,5 @@ jobs:
           --exclude='.git/' \
           --exclude='.github/' \
           --exclude='.infra/' \
-          ./ github@tg.sasin91.xyz:/var/www/html
+          ./ github@95.217.162.246:/var/www/html
           ssh github@yourserver 'sudo chown -R caddy:caddy /var/www/html'
