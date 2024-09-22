@@ -43,7 +43,7 @@ jobs:
 
       - name: ♻️ Deploy with rsync
         run: |
-          rsync --quiet --archive --progress --xattrs --delete \
+          rsync --quiet --archive --progress --delete \
           --rsync-path="sudo rsync" \
           --exclude='.git/' \
           --exclude='.github/' \
