@@ -1,7 +1,8 @@
 name: Deploy to tg.sasin91.xyz
 on:
-  deploy:
-    main
+  push:
+    branches:
+      - main
 jobs:
   app:
     name: 🚀 Deploy app
