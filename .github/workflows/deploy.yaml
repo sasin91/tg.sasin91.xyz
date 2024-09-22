@@ -22,11 +22,6 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
 
-      - name: Disable strict host key checking
-        run: |
-          mkdir -p ~/.ssh
-          echo "StrictHostKeyChecking no" >> ~/.ssh/config
-
       - name: Update config files with secrets and URLs
         run: |
           # Update password in /config/database.php
@@ -53,5 +48,5 @@ jobs:
           --exclude='.git/' \
           --exclude='.github/' \
           --exclude='.infra/' \
-          ./ github@95.217.162.246:/var/www/html
-          ssh github@yourserver 'sudo chown -R caddy:caddy /var/www/html'
+          ./ github@tg.sasin91.xyz:/var/www/html
+          ssh github@tg.sasin91.xyz 'sudo chown -R caddy:caddy /var/www/html'
