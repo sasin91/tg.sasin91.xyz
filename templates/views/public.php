@@ -29,6 +29,9 @@
 				</div>
 				<div>
 					<ul id="top-nav">
+                        <li>
+                            <?= anchor('blog', '<i class="fa fa-newspaper-o"></i> Blog') ?>
+                        </li>
 					    <li>
                             <form id="language_form" method="get">
                                 <label>

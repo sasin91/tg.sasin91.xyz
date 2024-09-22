@@ -1,0 +1,8 @@
+#blog #content {
+    margin-top: 2.5rem; /* mt-10 */
+    padding-top: 2.5rem; /* pt-10 */
+    border-top: 1px solid var(--primary); /* border-t and border-primary */
+    display: flex; /* flex */
+    align-items: center; /* items-center */
+    justify-content: center; /* justify-center */
+}
