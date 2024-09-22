@@ -1,0 +1,22 @@
+---
+- name: Install Memcached
+  dnf:
+    name:
+      - memcached
+      - php-pecl-memcached 
+    state: present
+
+
+- name: Configure Memcached for Performance
+  lineinfile:
+    path: /etc/sysconfig/memcached
+    regexp: '^OPTIONS='
+    line: 'OPTIONS="-m 512 -p 11211 -l 127.0.0.1 -c 1024"'
+  notify:
+    - restart memcached
+
+- name: Start and enable Memcached service
+  systemd:
+    name: memcached
+    state: started
+    enabled: yes

@@ -1,0 +1,65 @@
+---
+- name: Install required MySQL libraries for Python 3
+  dnf:
+    name:
+      - python3-PyMySQL
+    state: present
+
+- name: Install MariaDB
+  dnf:
+    name: mariadb-server
+    state: present
+
+- name: Start and enable MariaDB service
+  systemd:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Set root password
+  mysql_user:
+    name: root
+    password: "{{ db_root_password }}"
+    host_all: true
+    state: present
+
+- name: Remove anonymous users
+  mysql_user:
+    name: ''
+    host_all: true
+    state: absent
+
+- name: Remove test database
+  mysql_db:
+    name: test
+    state: absent
+    
+- name: Drop remote root access
+  mysql_user:
+    name: root
+    host: "{{ item }}"
+    state: absent
+  loop:
+    - 127.0.0.1
+    - ::1
+    - localhost
+
+- name: Reload privilege tables
+  mysql_db:
+    name: ''
+    state: present
+    
+- name: Configure MariaDB for Performance
+  copy:
+    dest: /etc/my.cnf.d/server.cnf
+    content: |
+      [mysqld]
+      innodb_buffer_pool_size = 1G
+      innodb_log_file_size = 256M
+      innodb_flush_log_at_trx_commit = 2
+      max_connections = 200
+      query_cache_size = 64M
+      thread_cache_size = 50
+      key_buffer_size = 64M
+  notify:
+    - restart mariadb

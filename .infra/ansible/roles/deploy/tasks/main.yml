@@ -1,0 +1,15 @@
+---
+- name: Rsync codebase to the server
+  synchronize:
+    mode: push
+    src: "{{ playbook_dir }}/../../" 
+    dest: /var/www/html/  # Destination on the server
+    recursive: yes
+    delete: yes  # Remove files in the destination not present in the source
+
+- name: Set permissions for web server
+  file:
+    path: /var/www/html/
+    owner: caddy  # or appropriate user
+    group: caddy  # or appropriate group
+    mode: '0755'

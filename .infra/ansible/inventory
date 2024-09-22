@@ -1,0 +1,5 @@
+[web]
+tg.sasin91.xyz ansible_ssh_user=root
+
+[database]
+tg.sasin91.xyz ansible_ssh_user=root

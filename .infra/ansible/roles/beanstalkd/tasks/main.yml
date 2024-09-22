@@ -1,0 +1,19 @@
+---
+- name: Install Beanstalkd
+  dnf:
+    name: beanstalkd
+    state: present
+
+- name: Configure Beanstalkd for Performance
+  lineinfile:
+    path: /etc/sysconfig/beanstalkd
+    regexp: '^BEANSTALKD_EXTRA='
+    line: 'BEANSTALKD_EXTRA="-b /var/lib/beanstalkd -z 65536"'
+  notify:
+    - restart beanstalkd
+
+- name: Start and enable Beanstalkd service
+  systemd:
+    name: beanstalkd
+    state: started
+    enabled: yes

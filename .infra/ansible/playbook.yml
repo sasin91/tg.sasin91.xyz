@@ -1,0 +1,22 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+    - vault.yml
+  
+  tasks:
+    - name: Install EPEL repository
+      dnf:
+        name: epel-release
+        state: present
+
+- hosts: web
+  roles:
+    - caddy
+    - php-fpm
+    - mariadb
+    - deploy
+
+- hosts: database
+  roles:
+    - mariadb

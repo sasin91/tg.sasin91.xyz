@@ -1,0 +1,62 @@
+---
+- name: Install Caddy
+  dnf:
+    name: caddy
+    state: present
+
+- name: Start and enable Caddy service
+  systemd:
+    name: caddy
+    state: started
+    enabled: yes
+
+- name: Configure Caddy for Performance
+  copy:
+    dest: /etc/caddy/Caddyfile
+    content: |
+      tg.sasin91.xyz {
+          root * /var/www/html/public
+          file_server
+          encode gzip zstd
+          php_fastcgi unix//run/php-fpm/www.sock
+          log {
+              output stdout
+              format json
+          }
+
+          tls jonas.kerwin.hansen@gmail.com
+      }
+  notify:
+    - restart caddy
+
+- name: Optimize Caddy system limits
+  lineinfile:
+    path: /usr/lib/systemd/system/caddy.service
+    regexp: 'LimitNOFILE='
+    line: 'LimitNOFILE=1048576'
+    insertbefore: '^ExecStart'
+  notify:
+    - reload systemd
+
+- name: Ensure firewalld is installed
+  dnf:
+    name: firewalld
+    state: present
+
+- name: Start and enable firewalld service
+  systemd:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Allow HTTP service
+  firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+
+- name: Allow HTTPS service
+  firewalld:
+    service: https
+    permanent: yes
+    state: enabled
