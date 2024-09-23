@@ -386,7 +386,7 @@ class Localizations extends Trongate {
         $data['module'] = post('module', true);
         $data['locale'] = post('locale', true);
         $data['key'] = post('key', true);
-        $data['value'] = post('value', true);        
+        $data['value'] = post('value', false);
         return $data;
     }
 

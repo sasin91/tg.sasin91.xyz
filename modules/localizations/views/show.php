@@ -38,7 +38,7 @@
                 </div>
                 <div class="row">
                     <div>Value</div>
-                    <div><?= out($value) ?></div>
+                    <div><?= ($value) ?></div>
                 </div>
                 <div class="row">
                     <div>Created</div>

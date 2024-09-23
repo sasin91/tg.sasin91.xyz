@@ -45,7 +45,7 @@ if (count($rows)>0) { ?>
                 <td><?= out($row->module) ?></td>
                 <td><?= out($row->locale) ?></td>
                 <td><?= out($row->key) ?></td>
-                <td><?= out($row->value) ?></td>
+                <td><?= ($row->value) ?></td>
                 <td><?= date('l jS F Y \a\t H:i',  strtotime($row->created)) ?></td>
                 <td><?= date('l jS F Y \a\t H:i',  strtotime($row->updated)) ?></td>
                 <td><?= anchor('localizations/show/'.$row->id, 'View', $attr) ?></td>        
