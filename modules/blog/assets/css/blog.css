@@ -6,3 +6,92 @@
     align-items: center; /* items-center */
     justify-content: center; /* justify-center */
 }
+
+.gradient-container {
+    position: relative;
+    padding: 4px;
+}
+
+.gradient-blur,
+.gradient-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    z-index: 1;
+    opacity: 0.6;
+    background: radial-gradient(circle farthest-side at 0% 100%, #00ccb1, transparent),
+    radial-gradient(circle farthest-side at 100% 0%, #7b61ff, transparent),
+    radial-gradient(circle farthest-side at 100% 100%, #ffc414, transparent),
+    radial-gradient(circle farthest-side at 0% 0%, #1ca0fb, #141316);
+    background-size: 400% 400%;
+    background-position: 99.9995% 50%;
+    transition: opacity 0.5s ease;
+}
+
+.gradient-container:hover .gradient-blur {
+    opacity: 1;
+    filter: blur(10px);
+}
+
+.gradient-overlay {
+    z-index: 2;
+}
+
+.content-wrapper {
+    position: relative;
+    z-index: 10;
+}
+
+.article-content {
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.article-box {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: var(--background);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+}
+
+.article-header {
+    padding: 24px;
+    text-align: center;
+}
+
+.article-title {
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+}
+
+.article-link {
+    text-decoration: none;
+}
+
+.article-date {
+    font-size: 0.875rem;
+}
+
+.article-image {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.article-image img {
+    object-fit: fill;
+    border-radius: 1rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.article-text {
+    padding: 24px 24px 0;
+    text-align: center;
+    font-size: 0.875rem;
+}

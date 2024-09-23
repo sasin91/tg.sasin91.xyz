@@ -28,7 +28,7 @@ a:hover span {
 }
 
 body {
-  background: rgb(21, 13, 38);
+  background: var(--background);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
