@@ -122,7 +122,6 @@ form#language_form select {
 }
 
 main {
-  width: 100%;
   margin: 0 auto;
   padding: 2.5rem !important;
   box-shadow: 0 0 0 0 #fff, 0 0 #0000, 0 0 #0000;
