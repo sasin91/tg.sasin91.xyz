@@ -69,7 +69,7 @@
 	<footer>
 		<div class="container">
 			<!-- it's okay to remove the links and content here - everything is cool (DC) -->
-			<div>&copy; Copyright <?= date('Y') . ' ' . OUR_NAME ?></div>
+			<div>&copy; <?= date('Y') . ' ' . OUR_NAME ?></div>
 			<div><?= anchor('https://trongate.io', 'Powered by Trongate') ?></div>
 		</div>
 	</footer>

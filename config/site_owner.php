@@ -1,7 +1,7 @@
 <?php
 //Settings to do with the identification of the site owner
-define('WEBSITE_NAME', 'sasin91');
-define('OUR_NAME', 'Your Company Name');
-define('OUR_TELNUM', '');
+define('WEBSITE_NAME', 'Sasin91');
+define('OUR_NAME', 'Sasin91');
+define('OUR_TELNUM', '+4550106917');
 define('OUR_ADDRESS', '');
-define('OUR_EMAIL_ADDRESS', '');
+define('OUR_EMAIL_ADDRESS', 'jonas.kerwin.hansen@gmail.com');
