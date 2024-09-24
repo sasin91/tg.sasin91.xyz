@@ -7,7 +7,7 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	<link rel="stylesheet" href="css/trongate.css">
 	<link rel="stylesheet" href="css/app.css">
-	<title>Public</title>
+	<title>Sasin91</title>
 	<?= $additional_includes_top ?>
 </head>
 <body>
