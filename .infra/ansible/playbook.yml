@@ -20,3 +20,7 @@
 - hosts: database
   roles:
     - mariadb
+
+- hosts: cache
+  roles: 
+    - redis
