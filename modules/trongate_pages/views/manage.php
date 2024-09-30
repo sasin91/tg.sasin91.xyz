@@ -402,7 +402,7 @@ if (count($rows) > 0) {
 </script>
 
 <script>
-    const websocket = new WebSocket('ws://localhost:8085?trongateToken=<?= $token ?>&user_id=<?= $user_id ?>');
+const websocket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?>&user_id=<?= $user_id ?>');
 
     setTimeout(() => {
         websocket.send(JSON.stringify({ module: 'chat', data: 'hello', extrabit: 1 }))
