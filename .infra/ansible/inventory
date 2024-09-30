@@ -6,3 +6,6 @@ tg.sasin91.xyz ansible_ssh_user=root
 
 [cache]
 tg.sasin91.xyz ansible_ssh_user=root
+
+[websocket]
+tg.sasin91.xyz ansible_ssh_user=root

@@ -24,3 +24,7 @@
 - hosts: cache
   roles: 
     - redis
+
+- hosts: websocket
+  roles:
+    - websocket

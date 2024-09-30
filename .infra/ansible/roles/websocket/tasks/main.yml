@@ -1,0 +1,37 @@
+---
+- name: Manage WebSocket Server
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure the WebSocket service file is present
+      copy:
+        dest: /etc/systemd/system/websocket-server.service
+        content: |
+          [Unit]
+          Description=WebSocket Server
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/bin/php /var/www/modules/websockets/runtime/server.php
+          Restart=always
+          User=www-data
+          Group=www-data
+          Environment=PATH=/usr/bin:/usr/local/bin
+          Environment=PHP_ENV=production
+          WorkingDirectory=/var/www
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: Reload systemd
+
+    - name: Enable and start WebSocket server service
+      systemd:
+        name: websocket-server
+        enabled: yes
+        state: started
+
+  handlers:
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
