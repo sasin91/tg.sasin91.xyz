@@ -21,8 +21,8 @@
 */
 
 //The main config file
-define('WEBSOCKET_URL', 'ws://localhost:8085');
-define('BASE_URL', 'http://sasin91.test/');
+define('WEBSOCKET_URL', 'ws://localhost/ws');
+define('BASE_URL', 'http://localhost/');
 define('ENV', 'dev');
 define('DEFAULT_MODULE', 'welcome');
 define('DEFAULT_CONTROLLER', 'Welcome');
