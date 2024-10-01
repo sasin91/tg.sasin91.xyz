@@ -2,7 +2,7 @@
 
 trait PubSubMessaging
 {
-    private function publishUserStatus($user, $status): void
+    protected function publishUserStatus($user, $status): void
     {
         $fiber = new Fiber(function ($userId, $status) {
             $this->publisher->publish('user_status', json_encode([
@@ -15,7 +15,7 @@ trait PubSubMessaging
         $this->fibers->enqueue($fiber);
     }
 
-    private function publishChatMessage($user, $message): void
+    protected function publishChatMessage($user, $message): void
     {
         $fiber = new Fiber(function ($user, $message) {
             $this->publisher->publish('chat_messages', json_encode([
@@ -28,7 +28,7 @@ trait PubSubMessaging
         $this->fibers->enqueue($fiber);
     }
 
-    private function subscribeToEvents(): void
+    protected function subscribeToEvents(): void
     {
         $fiber = new Fiber(function () {
             try {
@@ -46,7 +46,7 @@ trait PubSubMessaging
         $this->fibers->enqueue($fiber);
     }
 
-    private function broadcast($message): void
+    protected function broadcast($message): void
     {
         foreach ($this->clients as $client) {
             fwrite($client, $message);

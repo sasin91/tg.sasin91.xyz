@@ -21,19 +21,4 @@ trait WebsocketHandshake
             fwrite($clientSocket, $response);
         }
     }
-
-    protected function parseHeaders(string $header_string): array
-    {
-        $headers = [];
-        $lines = explode("\r\n", $header_string);
-
-        foreach ($lines as $line) {
-            if (str_contains($line, ": ")) {
-                list($key, $value) = explode(": ", $line, 2);
-                $headers[trim($key)] = trim($value);
-            }
-        }
-
-        return $headers;
-    }
 }
