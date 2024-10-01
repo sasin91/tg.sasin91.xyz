@@ -12,7 +12,7 @@
 
 - hosts: web
   roles:
-    - caddy
+    - nginx
     - php-fpm
     - mariadb
     - deploy

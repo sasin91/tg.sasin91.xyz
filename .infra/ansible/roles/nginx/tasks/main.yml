@@ -1,0 +1,37 @@
+---
+- name: Install EPEL repository
+  ansible.builtin.yum:
+    name: epel-release
+    state: present
+
+- name: Install Nginx and Certbot
+  ansible.builtin.yum:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Start and enable Nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Create Nginx configuration file
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/conf.d/tg.sasin91.xyz.conf
+  notify: Reload Nginx
+
+- name: Obtain SSL certificate with Certbot
+  ansible.builtin.command: >
+    certbot --nginx -d tg.sasin91.xyz --non-interactive --agree-tos -m jonas.kerwin.hansen@gmail.com
+  register: certbot_output
+  changed_when: "'Congratulations' in certbot_output.stdout"
+
+- name: Ensure Certbot renewal cron job is present
+  ansible.builtin.command: >
+    certbot renew --dry-run
+  register: certbot_renewal
+  ignore_errors: yes
