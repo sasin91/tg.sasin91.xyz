@@ -19,10 +19,10 @@
           file_server
           encode gzip zstd
           php_fastcgi unix//run/php-fpm/www.sock
-          reverse_proxy /ws/* 127.0.0.1:8085 {
-              transport http {
-                  versions h1 h2c
-              }
+          reverse_proxy /ws 127.0.0.1:8085 {
+            header_up -X-Forwarded-For
+            header_up -X-Forwarded-Host
+            header_up -X-Forwarded-Proto
           }
           log {
               output stdout
