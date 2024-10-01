@@ -113,10 +113,6 @@ trait WebsocketClientConnection
         $fiber = new Fiber(function ($client, $client_id) {
             while (!feof($client)) {
                 $frame = fread($client, 1024);
-                if (empty($frame)) {
-                    Fiber::suspend();
-                }
-
                 $decoded = $this->decodeWebSocketFrame($frame);
 
                 if (!empty($decoded)) {
@@ -169,19 +165,24 @@ trait WebsocketClientConnection
             $last_pong = (int)$client_state['last_pong'];
             $client_socket = $client_state['socket'];
 
-            // Check if we need to send a ping
-            if (($currentTime - $last_pong) >= $this->pingInterval) {
-                fwrite($client_socket, "ping\n");
+            while(true) {
+                // Check if we need to send a ping
+                if (($currentTime - $last_pong) >= $this->pingInterval) {
+                    fwrite($client_socket, "ping\n");
+                }
+
+                // Check if pong was not received within the timeout
+                if (($currentTime - $last_pong) >= $this->pongTimeout) {
+                    fclose($client_socket);
+
+                    $userId = $this->clients[$clientId]['user_id'];
+                    $this->publishUserStatus($userId, 'offline');
+                    unset($this->clients[$clientId]);
+
+                    return;
+                }
+
                 Fiber::suspend();
-            }
-
-            // Check if pong was not received within the timeout
-            if (($currentTime - $last_pong) >= $this->pongTimeout) {
-                fclose($client_socket);
-
-                $userId = $this->clients[$clientId]['user_id'];
-                $this->publishUserStatus($userId, 'offline');
-                unset($this->clients[$clientId]);
             }
         });
 
