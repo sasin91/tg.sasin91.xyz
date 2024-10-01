@@ -60,17 +60,13 @@ class WebsocketServer
     public bool $running = false;
 
     public function __construct(
-        // Publish events for other instances or apps to subscribe to
-        private readonly Redis $publisher,
-        // Listen for events from other instances
-        private readonly Redis $subscriber,
-        // Data storage
-        private readonly Redis $storage,
-        string                 $host = '127.0.0.1',
-        int                    $port = 8085,
-        private readonly int   $timeout = 0,
-        private readonly int   $pingInterval = 5,
-        private readonly int   $pongTimeout = 10,
+        string               $host = '127.0.0.1',
+        int                  $port = 8085,
+        private readonly int $timeout = 0,
+        private readonly int $pingInterval = 5,
+        private readonly int $pongTimeout = 10,
+        string               $redis_host = '127.0.0.1',
+        int                  $redis_port = 6379,
     )
     {
         // Create a TCP socket
@@ -88,6 +84,7 @@ class WebsocketServer
 
         $this->fibers = new SplQueue();
 
+        $this->establishRedisConnection($redis_host, $redis_port);
         $this->subscribeToEvents();
     }
 
@@ -167,5 +164,4 @@ class WebsocketServer
             }
         }
     }
-
 }
