@@ -17,7 +17,7 @@
 				<div id="hamburger" onclick="openSlideNav()">&#9776;</div>
 				<div class="logo">
 					<?= anchor(BASE_URL, WEBSITE_NAME) ?>
-                    <span class="badge">0 Online</span>
+                    <span class="online_count badge">0 Online</span>
 				</div>
 				<div>
 					<?= anchor('account', '<i class="fa fa-user"></i>') ?>
@@ -27,7 +27,7 @@
 			<div id="header-lg">
 				<div class="logo">
 					<?= anchor(BASE_URL, WEBSITE_NAME) ?>
-                    <span class="badge">0 Online</span>
+                    <span class="online_count badge">0 Online</span>
 				</div>
 				<div>
 					<ul id="top-nav">
@@ -82,13 +82,37 @@
 	<script src="js/app.js"></script>
   <script src="js/language-selector.js"></script>
     <script>
+        let num_online = 0;
+        const online_count = document.querySelectorAll('.online_count');
+
         const socket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?>&user_id=<?= $user_id ?>');
         socket.onopen = function(event) {
             console.log("Connection opened:", event);
         };
 
         socket.onmessage = function(event) {
-            console.log("Message received:", event.data);
+            const data = JSON.parse(event.data);
+
+            switch(data.channel) {
+                case 'user_status':
+                    if (data.message.status === 'online') {
+                        num_online++;
+                    } else {
+                        num_online--;
+                    }
+
+                    online_count.forEach((element) => {
+                        element.innerHTML = `${num_online} Online`;
+                    });
+                break;
+                
+                case 'chat_message':
+                    // TODO
+                    console.log(data.message);
+                break;    
+            }
+
+            console.log("Message received:", data);
         };
 
         socket.onclose = function(event) {

@@ -71,7 +71,6 @@ trait WebsocketClientConnection
             $this->clients[$client_id]['trongateToken'] = $token;
             $this->clients[$client_id]['user_id'] = $userId;
 
-            $this->storeClient($client_id);
             $this->publishUserStatus($userId, 'online');
 
             // Client initiated,
@@ -80,23 +79,6 @@ trait WebsocketClientConnection
         });
 
         $fiber->start($client, $client_id);
-        $this->fibers->enqueue($fiber);
-    }
-
-    /**
-     * Persist the client for other instances to retrieve
-     *
-     * @param int $client_id
-     * @return void
-     * @throws Throwable
-     */
-    protected function storeClient(int $client_id): void
-    {
-        $fiber = new Fiber(function ($client_id, $client_socket) {
-            $this->storage->set("client:$client_id", $client_socket);
-        });
-
-        $fiber->start($client_id, $this->clients[$client_id]);
         $this->fibers->enqueue($fiber);
     }
 

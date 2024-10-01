@@ -3,6 +3,13 @@
 trait PubSubMessaging
 {
     /**
+     * Messages that should be broadcasted back to the clients
+     * 
+     * @var array
+     */
+    protected array $loopback_messages = [];
+
+    /**
      * The redis socket used for sharing state across instances.
      *
      * @var resource
@@ -27,27 +34,43 @@ trait PubSubMessaging
 
     protected function publish(string $channel, string $message): void
     {
-        $fiber = new Fiber(function (string $channel, string $message) {
-            return fwrite($this->redis_socket, "PUBLISH {$channel} {$message}\r\n");
-        });
+        $this->loopback_messages[] = ['channel' => $channel, 'message' => $message];
 
-        $fiber->start($channel, $message);
-        $this->fibers->enqueue($fiber);
+        $published = fwrite($this->redis_socket, "PUBLISH {$channel} {$message}");
+
+        if ($published === false) {
+            error_log("Failed publishing message");
+        }
     }
 
     protected function subscribeToEvents(): void
     {
-        fwrite($this->redis_socket, "SUBSCRIBE user_status\r\n");
-        fwrite($this->redis_socket, "SUBSCRIBE chat_message\r\n");
+        $subscribed = fwrite($this->redis_socket, "SUBSCRIBE user_status chat_messages");
+        if ($subscribed === false) {
+            error_log("Error subscribing");
+            return;
+        }
+
+        echo "subscribed \n";
 
         $fiber = new Fiber(function ($socket) {
-            while ($line = fgets($socket)) {
-                if (str_contains($line, 'message')) {
-                    list(, , $channel, $message) = explode(' ', trim($line), 4);
-                    echo "Received message on channel {$channel}: {$message}\n";
+            while (true) {
+                $line = fgets($socket);
 
-                    $this->broadcast($message);
+                if ($line) {
+                    var_dump($line);
                 }
+                if (is_string($line) && preg_match('/\{.*?\}/', $line, $matches)) {
+                    $this->broadcast($matches[0]);
+                }
+
+                $count = count($this->loopback_messages);
+                while($count--) {
+                    $message = $this->loopback_messages[$count];
+
+                    $this->broadcast($message['channel'], $message['message']);
+                }
+                $this->loopback_messages = [];
 
                 Fiber::suspend();
             }
@@ -57,11 +80,59 @@ trait PubSubMessaging
         $this->fibers->enqueue($fiber);
     }
 
-    protected function broadcast($message): void
+    protected function broadcast(string $channel, string $message): void
     {
-        foreach ($this->clients as $client) {
-            fwrite($client, $message);
+        $client_sockets = array_column($this->clients, 'socket');
+
+        $frame = $this->encodeWebSocketFrame(json_encode([
+            'channel' => $channel,
+            'message' => json_decode($message)
+        ]));
+    
+        foreach ($client_sockets as $client) {
+            $this->fwrite($client, $frame);
         }
+    }
+
+    /**
+     * Safely attempt to write the message
+     * 
+     * @param resource $fp 
+     * @param string $data 
+     * @return bool 
+     */
+    protected function fwrite($fp, string $data): bool
+    {
+        $totalBytes = strlen($data);
+        $writtenBytes = 0;
+        $maxRetries = 5;
+        $retries = 0;
+    
+        while ($writtenBytes < $totalBytes && $retries < $maxRetries) {
+            $result = fwrite($fp, substr($data, $writtenBytes));
+    
+            if ($result === false) {
+                error_log("Error writing to socket.");
+                return false;
+            } elseif ($result === 0) {
+                error_log("Write returned 0 bytes; connection may be closed.");
+                return false;
+            }
+    
+            $writtenBytes += $result;
+    
+            if ($writtenBytes < $totalBytes) {
+                $retries++;
+                usleep(100000);
+            }
+        }
+    
+        if ($writtenBytes < $totalBytes) {
+            error_log("Failed to write all bytes after retries.");
+            return false;
+        }
+    
+        return true;
     }
 
     protected function establishRedisConnection(string $redis_host, int $redis_port): void
