@@ -17,6 +17,7 @@
 				<div id="hamburger" onclick="openSlideNav()">&#9776;</div>
 				<div class="logo">
 					<?= anchor(BASE_URL, WEBSITE_NAME) ?>
+                    <span class="badge">0 Online</span>
 				</div>
 				<div>
 					<?= anchor('account', '<i class="fa fa-user"></i>') ?>
@@ -26,6 +27,7 @@
 			<div id="header-lg">
 				<div class="logo">
 					<?= anchor(BASE_URL, WEBSITE_NAME) ?>
+                    <span class="badge">0 Online</span>
 				</div>
 				<div>
 					<ul id="top-nav">
@@ -79,6 +81,24 @@
 	</div>
 	<script src="js/app.js"></script>
   <script src="js/language-selector.js"></script>
+    <script>
+        const socket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?>&user_id=<?= $user_id ?>');
+        socket.onopen = function(event) {
+            console.log("Connection opened:", event);
+        };
+
+        socket.onmessage = function(event) {
+            console.log("Message received:", event.data);
+        };
+
+        socket.onclose = function(event) {
+            console.log("Connection closed:", event);
+        };
+
+        socket.onerror = function(error) {
+            console.error("WebSocket error:", error);
+        };
+    </script>
 	<?= $additional_includes_btm ?>
 </body>
 </html>
