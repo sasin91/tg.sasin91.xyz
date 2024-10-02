@@ -124,7 +124,7 @@
 
         socket.onclose = function(event) {
             console.log("Connection closed:", event);
-            clearInterval(heartbeatInterval);
+            // clearInterval(heartbeatInterval);
         };
 
         socket.onerror = function(error) {
