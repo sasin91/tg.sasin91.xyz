@@ -28,7 +28,8 @@ trait WebsocketClientConnection
                 'last_pong' => time(),
                 'last_ping' => time(),
                 'trongateToken' => null,
-                'user_id' => null
+                'user_id' => null,
+                'fingerprint' => null
             ];
 
             stream_set_blocking($client, false);
@@ -71,16 +72,29 @@ trait WebsocketClientConnection
             preg_match('/GET\s.*\?(.*)\sHTTP/', $header_string, $matches);
             parse_str($matches[1], $queryParams);
 
+            $fingerprint = $queryParams['fingerprint'];
             $token = $queryParams['trongateToken'] ?? null;
             $userId = $queryParams['user_id'] ?? null;
 
+            $this->clients[$client_id]['fingerprint'] = $fingerprint;
             $this->clients[$client_id]['trongateToken'] = $token;
             $this->clients[$client_id]['user_id'] = $userId;
 
             $this->publishUserStatus($userId, 'online');
 
+            $unique_clients = [];
+            $num_clients = count($this->clients);
+
+            foreach($this->clients as $client) {
+                if (isset($unique_clients[$client['fingerprint']])) {
+                    continue;
+                }
+
+                $unique_clients[$client['fingerprint']] = $client;
+            }
+
             $this->broadcast('state', json_encode([
-                'num_online' => max(0, count($this->clients) - 1) // subtract our own connection
+                'num_online' => max(0, count($unique_clients) - 1) // subtract our own connection
             ]));
 
             // Client initiated,

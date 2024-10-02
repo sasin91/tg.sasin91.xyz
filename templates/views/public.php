@@ -81,15 +81,18 @@
 	</div>
 	<script src="js/app.js"></script>
     <script src="js/utils.js"></script>
-  <script src="js/language-selector.js"></script>
+    <script src="js/fingerprint.js"></script>
+    <script src="js/language-selector.js"></script>
     <script>
-        let num_online = 0;
+        let fingerprint;
+
         const online_count = document.querySelectorAll('.online_count');
+        let num_online = 0;
 
         let connectionAttempts = 0;
         let socket;
         function connectToWebsocket() {
-            socket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>');
+            socket = new WebSocket(`<?= WEBSOCKET_URL ?>?fingerprint=${fingerprint}&trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`);
             socket.onopen = function(event) {
                 console.log("Connection opened:", event);
             };
@@ -136,7 +139,18 @@
             connectionAttempts++;
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', async function () {
+            const fingerprintBuffer = await crypto.subtle.digest(
+                'SHA-256', 
+                new TextEncoder().encode(
+                    generateBrowserFingerprint()
+                )
+            );
+
+            fingerprint = Array.from(new Uint8Array(fingerprintBuffer))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+
             connectToWebsocket();
         });
     </script>
