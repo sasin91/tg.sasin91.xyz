@@ -5,22 +5,6 @@ require_once __DIR__ . '/WebsocketFrameEncoding.php';
 require_once __DIR__ . '/WebsocketClientConnection.php';
 require_once __DIR__ . '/PubSubMessaging.php';
 
-const APP_ROOT = __DIR__ . '/../../../';
-const MODULES_ROOT = APP_ROOT . 'modules';
-const ENGINE_ROOT = APP_ROOT . 'engine';
-
-spl_autoload_register(function ($class_name) {
-
-    $class_name = str_replace('alidation_helper', 'alidation', $class_name);
-    $target_filename = realpath(ENGINE_ROOT . '/' . $class_name . '.php');
-
-    if (file_exists($target_filename)) {
-        return require_once($target_filename);
-    }
-
-    return false;
-});
-
 class WebsocketServer
 {
     use WebsocketHandshake;

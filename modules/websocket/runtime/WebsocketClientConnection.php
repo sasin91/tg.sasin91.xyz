@@ -3,6 +3,13 @@
 trait WebsocketClientConnection
 {
     /**
+     * Lazily instantiated message handler instance
+     * 
+     * @var null|WebsocketMessageHandler
+     */
+    protected ?WebsocketMessageHandler $message_handler = null;
+
+    /**
      * Accepts new client connections and initializes the client session.
      *
      * @return void
@@ -104,7 +111,7 @@ trait WebsocketClientConnection
                     if (!empty($decoded)) {
                         if (isset($decoded['type']) && $decoded['type'] === 'pong') {
                             $this->clients[$client_id]['last_pong'] = time();
-                            break;
+                            continue;
                         }
 
                         $decodedMessage = $decoded['payload'];
@@ -124,20 +131,19 @@ trait WebsocketClientConnection
         $this->fibers->enqueue($fiber);
     }
 
-    protected function processWebSocketRequest($json, $client_id)
+    protected function message_handler(): WebsocketMessageHandler
     {
-        $module = $json['module'] ?? null;
-        $controller = $json['controller'] ?? ucwords($module);
-        $action = $json['action'] ?? '_on_websocket_message';
-
-        $controller_path = MODULES_ROOT . '/' . $module . '/controllers/' . $controller . '.php';
-        if (file_exists($controller_path)) {
-            require_once $controller_path;
-            $controllerInstance = new $controller($module);
-            return $controllerInstance->$action($json, $this->clients[$client_id]);
+        if (!$this->message_handler) {
+            require_once __DIR__ . '/WebsocketMessageHandler.php';
+            $this->message_handler = new WebsocketMessageHandler();
         }
 
-        return 'Invalid request';
+        return $this->message_handler;   
+    }
+
+    protected function processWebSocketRequest($json, $client_id): string
+    {
+        return $this->message_handler()->controller_action($json, $this->clients[$client_id]);
     }
 
     /**
