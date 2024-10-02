@@ -400,12 +400,3 @@ if (count($rows) > 0) {
         window.location.href = targetUrl;
     }
 </script>
-
-<script>
-const websocket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?>&user_id=<?= $user_id ?>');
-
-    setTimeout(() => {
-        websocket.send(JSON.stringify({ module: 'chat', data: 'hello', extrabit: 1 }))
-        console.log('sent!');
-    }, 1000);
-</script>
