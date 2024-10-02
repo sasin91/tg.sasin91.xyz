@@ -88,7 +88,15 @@ trait PubSubMessaging
         ]));
     
         foreach ($client_sockets as $client) {
-            $this->fwrite($client, $frame);
+            if (!is_resource($client)) {
+                continue;
+            }
+
+            $written = @fwrite($client, $frame);
+
+            if ($written === false) {
+                $this->userOffline($client);
+            }
         }
     }
 
