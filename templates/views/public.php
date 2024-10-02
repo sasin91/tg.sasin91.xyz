@@ -85,7 +85,7 @@
         let num_online = 0;
         const online_count = document.querySelectorAll('.online_count');
 
-        const socket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?>&user_id=<?= $user_id ?>');
+        const socket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>');
 
         socket.onopen = function(event) {
             console.log("Connection opened:", event);
