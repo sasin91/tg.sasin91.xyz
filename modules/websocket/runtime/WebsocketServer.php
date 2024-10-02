@@ -63,8 +63,7 @@ class WebsocketServer
         string                    $host = '127.0.0.1',
         int                       $port = 8085,
         private readonly int      $timeout = 0,
-        private readonly int      $pingTimeout = 30,
-        private readonly int      $pongTimeout = 5,
+        private readonly int      $pingTimeout = 10,
         protected readonly string $redis_host = '127.0.0.1',
         protected readonly int    $redis_port = 6379,
     )

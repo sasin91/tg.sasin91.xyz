@@ -108,15 +108,10 @@ trait WebsocketClientConnection
                         }
 
                         $decodedMessage = $decoded['payload'];
-                        
-                        if ($decodedMessage === 'heartbeat') {
-                            $this->clients[$client_id]['last_pong'] = time();
-                        } else {
-                            $json = @json_decode($decodedMessage, true);
-                            $response = $this->processWebSocketRequest($json, $client_id);
-                            $responseFrame = $this->encodeWebSocketFrame($response);
-                            $this->fwrite($client, $responseFrame);
-                        }
+                        $json = @json_decode($decodedMessage, true);
+                        $response = $this->processWebSocketRequest($json, $client_id);
+                        $responseFrame = $this->encodeWebSocketFrame($response);
+                        $this->fwrite($client, $responseFrame);
                     }
                 }
 
@@ -183,15 +178,6 @@ trait WebsocketClientConnection
                     }
 
                     $this->clients[$client_id]['last_ping'] = time();
-                }
-
-                // Nb. Ping / Pong isn't fully reliably, 
-                // so we support the client sending a "heartbeat"
-                // as a manual way to pong back to avoid being terminated
-                if ($pong_diff >= $this->pongTimeout) {
-                    $this->userOffline($client);
-                    // Terminate fiber
-                    return;
                 }
 
                 Fiber::suspend();

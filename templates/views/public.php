@@ -87,14 +87,8 @@
 
         const socket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?>&user_id=<?= $user_id ?>');
 
-        let heartbeatInterval;
-
         socket.onopen = function(event) {
             console.log("Connection opened:", event);
-
-            heartbeatInterval = setInterval(() => {
-                socket.send('heartbeat');
-            }, 1_000);
         };
 
         socket.onmessage = function(event) {
@@ -124,7 +118,6 @@
 
         socket.onclose = function(event) {
             console.log("Connection closed:", event);
-            // clearInterval(heartbeatInterval);
         };
 
         socket.onerror = function(error) {
