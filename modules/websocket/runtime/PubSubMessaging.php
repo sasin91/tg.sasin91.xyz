@@ -80,19 +80,17 @@ trait PubSubMessaging
 
     protected function broadcast(string $channel, string $message): void
     {
-        $client_sockets = array_column($this->clients, 'socket');
-
         $frame = $this->encodeWebSocketFrame(json_encode([
             'channel' => $channel,
             'message' => json_decode($message)
         ]));
     
-        foreach ($client_sockets as $client) {
-            if (!is_resource($client)) {
+        foreach ($this->clients as $client) {
+            if (!is_resource($client['socket'])) {
                 continue;
             }
 
-            $written = @fwrite($client, $frame);
+            $written = @fwrite($client['socket'], $frame);
 
             if ($written === false) {
                 $this->userOffline($client);
