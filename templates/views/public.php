@@ -98,6 +98,10 @@
                 const data = JSON.parse(event.data);
 
                 switch(data.channel) {
+                    case 'state':
+                        num_online = data.message.num_online;
+                    break;
+
                     case 'user_status':
                         if (data.message.status === 'online') {
                             num_online++;

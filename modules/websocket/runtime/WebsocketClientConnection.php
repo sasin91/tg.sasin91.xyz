@@ -79,6 +79,10 @@ trait WebsocketClientConnection
 
             $this->publishUserStatus($userId, 'online');
 
+            $this->broadcast('state', json_encode([
+                'num_online' => max(0, count($this->clients) - 1) // subtract our own connection
+            ]));
+
             // Client initiated,
             // terminate fiber
             return;
