@@ -80,49 +80,61 @@
 		<ul auto-populate="true"></ul>
 	</div>
 	<script src="js/app.js"></script>
+    <script src="js/utils.js"></script>
   <script src="js/language-selector.js"></script>
     <script>
         let num_online = 0;
         const online_count = document.querySelectorAll('.online_count');
 
-        const socket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>');
+        let connectionAttempts = 0;
+        let socket;
+        function connectToWebsocket() {
+            socket = new WebSocket('<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>');
+            socket.onopen = function(event) {
+                console.log("Connection opened:", event);
+            };
 
-        socket.onopen = function(event) {
-            console.log("Connection opened:", event);
-        };
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
 
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
+                switch(data.channel) {
+                    case 'user_status':
+                        if (data.message.status === 'online') {
+                            num_online++;
+                        } else {
+                            num_online--;
+                        }
 
-            switch(data.channel) {
-                case 'user_status':
-                    if (data.message.status === 'online') {
-                        num_online++;
-                    } else {
-                        num_online--;
-                    }
+                        online_count.forEach((element) => {
+                            element.innerHTML = `${num_online} Online`;
+                        });
+                    break;
+                    
+                    case 'chat_message':
+                        // TODO
+                        console.log(data.message);
+                    break;    
+                }
 
-                    online_count.forEach((element) => {
-                        element.innerHTML = `${num_online} Online`;
-                    });
-                break;
-                
-                case 'chat_message':
-                    // TODO
-                    console.log(data.message);
-                break;    
-            }
+                console.log("Message received:", data);
+            };
 
-            console.log("Message received:", data);
-        };
+            socket.onclose = function(event) {
+                console.log("Connection closed:", event);
 
-        socket.onclose = function(event) {
-            console.log("Connection closed:", event);
-        };
+                debounce(connectToWebsocket, 1000);
+            };
 
-        socket.onerror = function(error) {
-            console.error("WebSocket error:", error);
-        };
+            socket.onerror = function(error) {
+                console.error("WebSocket error:", error);
+            };
+        
+            connectionAttempts++;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            connectToWebsocket();
+        });
     </script>
 	<?= $additional_includes_btm ?>
 </body>
