@@ -116,7 +116,7 @@ trait WebsocketClientConnection
 
                         $decodedMessage = $decoded['payload'];
                         $json = @json_decode($decodedMessage, true);
-                        $response = $this->processWebSocketRequest($json, $client_id);
+                        $response = $this->processWebSocketRequest($json ?? [], $client_id);
                         $responseFrame = $this->encodeWebSocketFrame($response);
                         $this->fwrite($client, $responseFrame);
                     }
