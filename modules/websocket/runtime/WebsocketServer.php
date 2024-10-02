@@ -60,13 +60,13 @@ class WebsocketServer
     public bool $running = false;
 
     public function __construct(
-        string               $host = '127.0.0.1',
-        int                  $port = 8085,
-        private readonly int $timeout = 0,
-        private readonly int $pingInterval = 5,
-        private readonly int $pongTimeout = 10,
-        string               $redis_host = '127.0.0.1',
-        int                  $redis_port = 6379,
+        string                    $host = '127.0.0.1',
+        int                       $port = 8085,
+        private readonly int      $timeout = 0,
+        private readonly int      $pingTimeout = 30,
+        private readonly int      $pongTimeout = 5,
+        protected readonly string $redis_host = '127.0.0.1',
+        protected readonly int    $redis_port = 6379,
     )
     {
         // Create a TCP socket
@@ -84,7 +84,8 @@ class WebsocketServer
 
         $this->fibers = new SplQueue();
 
-        $this->establishRedisConnection($redis_host, $redis_port);
+        $this->establishPublisherConnection();
+        $this->establishSubscriberConnection();
         $this->subscribeToEvents();
     }
 
@@ -92,13 +93,19 @@ class WebsocketServer
     {
         $this->running = true;
 
+        $timeout = $this->fibers->count() > 0 ? $this->timeout : null;
+
         while ($this->running) {
-            $available_streams = $this->selectStreams();
+            $read = [$this->server_socket];
+            
+            $available_streams = $this->selectStreams(
+                read: $read,
+                timeout: $timeout
+            );
 
             pcntl_signal_dispatch();
 
-            if (false === $available_streams) {
-                echo "no streams available";
+            if ($available_streams === false) {
                 // if a system call has been interrupted,
                 // we cannot rely on it's outcome
                 return;
@@ -106,17 +113,14 @@ class WebsocketServer
 
             $this->acceptClientConnection();
             $this->dispatchFibers();
+
+            // prevent busy-loop
+            usleep(100000); // Sleep for 100ms
         }
     }
 
-    public function selectStreams(): int|false
+    public function selectStreams(array $read, ?array $write = null, ?array $except = null, ?int $timeout = null): int|false
     {
-        $timeout = $this->fibers->count() > 0 ? $this->timeout : null;
-        $client_sockets = array_column($this->clients, 'socket');
-        $read = [$this->server_socket, ...$client_sockets];
-        $write = null;
-        $except = null;
-
         /** @var ?callable $previous */
         $previous = set_error_handler(function ($errno, $errstr) use (&$previous) {
             // suppress warnings that occur when `stream_select()` is interrupted by a signal
@@ -131,7 +135,12 @@ class WebsocketServer
         });
 
         try {
-            $available_streams = stream_select($read, $write, $except, $timeout === null ? null : 0, $timeout);
+            $available_streams = stream_select(
+                $read, 
+                $write, 
+                $except, 
+                $timeout === null ? null : 0, $timeout
+            );
             restore_error_handler();
 
             return $available_streams;
@@ -141,6 +150,51 @@ class WebsocketServer
         }
 
         return false;
+    }
+
+    /**
+     * Safely attempt to write the message
+     * 
+     * @param resource $fp 
+     * @param string $data 
+     * @return bool 
+     */
+    protected function fwrite($fp, string $data): bool
+    {
+        if (is_resource($fp) === false) {
+            return false;
+        }
+
+        $totalBytes = strlen($data);
+        $writtenBytes = 0;
+        $maxRetries = 5;
+        $retries = 0;
+    
+        while ($writtenBytes < $totalBytes && $retries < $maxRetries) {
+            $result = @fwrite($fp, substr($data, $writtenBytes));
+    
+            if ($result === false) {
+                error_log("Error writing [$data] to socket.");
+                return false;
+            } elseif ($result === 0) {
+                error_log("Write returned 0 bytes; connection may be closed.");
+                return false;
+            }
+    
+            $writtenBytes += $result;
+    
+            if ($writtenBytes < $totalBytes) {
+                $retries++;
+                usleep(100000);
+            }
+        }
+    
+        if ($writtenBytes < $totalBytes) {
+            error_log("Failed to write all bytes after retries.");
+            return false;
+        }
+    
+        return true;
     }
 
     /**

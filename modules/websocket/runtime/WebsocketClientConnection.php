@@ -11,7 +11,6 @@ trait WebsocketClientConnection
      */
     public function acceptClientConnection(): void
     {
-        // Accept new client connections
         $client = @stream_socket_accept($this->server_socket, $this->timeout);
 
         if ($client) {
@@ -20,10 +19,12 @@ trait WebsocketClientConnection
             $this->clients[$client_id] = [
                 'socket' => $client,
                 'last_pong' => time(),
+                'last_ping' => time(),
                 'trongateToken' => null,
                 'user_id' => null
             ];
 
+            stream_set_blocking($client, false);
             $this->initiateClientConnection($client, $client_id);
             $this->listenForWebsocketFrames($client, $client_id);
             $this->keepAlive($client_id);
@@ -39,10 +40,9 @@ trait WebsocketClientConnection
     protected function initiateClientConnection($client, int $client_id): void
     {
         $fiber = new Fiber(function ($client, $client_id) {
-            stream_set_blocking($client, false);
             $header_string = '';
 
-            // Read HTTP request for WebSocket handshake
+            // Non-blocking socket, loop until headers are read
             while (!feof($client)) {
                 $data = fread($client, 1024);
                 if ($data === false) {
@@ -51,17 +51,16 @@ trait WebsocketClientConnection
                 }
                 $header_string .= $data;
 
-                // End of headers (double CRLF) or the entire request is small
                 if (str_contains($header_string, "\r\n\r\n")) {
                     break;
                 }
             }
 
-            // Handle WebSocket handshake if Upgrade request is found
             if (str_contains($header_string, "Upgrade: websocket")) {
                 $this->handleWebSocketHandshake($client, $header_string);
             }
 
+            // parse query params
             preg_match('/GET\s.*\?(.*)\sHTTP/', $header_string, $matches);
             parse_str($matches[1], $queryParams);
 
@@ -93,34 +92,32 @@ trait WebsocketClientConnection
     protected function listenForWebsocketFrames($client, int $client_id): void
     {
         $fiber = new Fiber(function ($client, $client_id) {
-            while (!feof($client)) {
-                $frame = fread($client, 1024);
-                $decoded = $this->decodeWebSocketFrame($frame);
+            while (is_resource($client) && !feof($client)) {
+                $read = [$client];
+                $write = $except = null;
+                $available_streams = stream_select($read, $write, $except, 0, 200000);
+                
+                if ($available_streams) {
+                    $frame = fread($client, 1024);
+                    $decoded = $this->decodeWebSocketFrame($frame);
 
-                if (!empty($decoded)) {
-                    $decodedMessage = $decoded['payload'];
+                    if (!empty($decoded)) {
+                        if (isset($decoded['type']) && $decoded['type'] === 'pong') {
+                            $this->clients[$client_id]['last_pong'] = time();
+                            break;
+                        }
 
-                    $json = json_decode($decodedMessage, true);
-
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        $responseFrame = $this->encodeWebSocketFrame('Invalid JSON payload.');
-                    } else {
-                        $module = $json['module'];
-                        $controller = $json['controller'] ?? ucwords($module);
-                        $action = $json['action'] ?? '_on_websocket_message';
-
-                        // TODO: instead of invoking the code, should we dispatch a curl HTTP request here?
-                        $controller_path = MODULES_ROOT . '/' . $module . '/controllers/' . $controller . '.php';
-                        require_once $controller_path;
-                        $controller = new $controller($module);
-                        $payload = $controller->$action(
-                            $json,
-                            $this->clients[$client_id]
-                        );
-                        $responseFrame = $this->encodeWebSocketFrame($payload);
+                        $decodedMessage = $decoded['payload'];
+                        
+                        if ($decodedMessage === 'heartbeat') {
+                            $this->clients[$client_id]['last_pong'] = time();
+                        } else {
+                            $json = @json_decode($decodedMessage, true);
+                            $response = $this->processWebSocketRequest($json, $client_id);
+                            $responseFrame = $this->encodeWebSocketFrame($response);
+                            $this->fwrite($client, $responseFrame);
+                        }
                     }
-
-                    fwrite($client, $responseFrame);
                 }
 
                 // Yield back control after each iteration
@@ -132,6 +129,22 @@ trait WebsocketClientConnection
         $this->fibers->enqueue($fiber);
     }
 
+    protected function processWebSocketRequest($json, $client_id)
+    {
+        $module = $json['module'] ?? null;
+        $controller = $json['controller'] ?? ucwords($module);
+        $action = $json['action'] ?? '_on_websocket_message';
+
+        $controller_path = MODULES_ROOT . '/' . $module . '/controllers/' . $controller . '.php';
+        if (file_exists($controller_path)) {
+            require_once $controller_path;
+            $controllerInstance = new $controller($module);
+            return $controllerInstance->$action($json, $this->clients[$client_id]);
+        }
+
+        return 'Invalid request';
+    }
+
     /**
      * keep the client alive using ping / pong packets
      *
@@ -141,26 +154,43 @@ trait WebsocketClientConnection
      */
     protected function keepAlive(int $client_id): void
     {
-        $fiber = new Fiber(function (int $clientId) {
-            $currentTime = time();
-            $client_state = $this->clients[$clientId];
-            $last_pong = (int)$client_state['last_pong'];
-            $client_socket = $client_state['socket'];
+        $fiber = new Fiber(function () use ($client_id) {
+            // @see https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#pings_and_pongs_the_heartbeat_of_websockets
+            $pingFrame = $this->encodeWebSocketFrame('', 0x9);
 
-            while(true) {
-                // Check if we need to send a ping
-                if (($currentTime - $last_pong) >= $this->pingInterval) {
-                    fwrite($client_socket, "ping\n");
+            while (isset($this->clients[$client_id])) {
+                $client = $this->clients[$client_id];
+                $currentTime = time();
+                $pong_diff = $currentTime - $client['last_pong'];
+                $ping_diff = $currentTime - $client['last_ping'];
+
+                if (
+                    $pong_diff >= $this->pingTimeout 
+                    // Prevent spamming pings
+                    && $ping_diff > ($this->pingTimeout / 2)
+                ) {
+                    // @see https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#pings_and_pongs_the_heartbeat_of_websockets
+                    $pingFrame = $this->encodeWebSocketFrame('', 0x9);
+                    $ping = @fwrite(
+                        $client['socket'], 
+                        $pingFrame
+                    );
+
+                    if ($ping === false) {
+                        $this->userOffline($client);
+                        // Terminate fiber
+                        return;
+                    }
+
+                    $this->clients[$client_id]['last_ping'] = time();
                 }
 
-                // Check if pong was not received within the timeout
-                if (($currentTime - $last_pong) >= $this->pongTimeout) {
-                    fclose($client_socket);
-
-                    $userId = $this->clients[$clientId]['user_id'];
-                    $this->publishUserStatus($userId, 'offline');
-                    unset($this->clients[$clientId]);
-
+                // Nb. Ping / Pong isn't fully reliably, 
+                // so we support the client sending a "heartbeat"
+                // as a manual way to pong back to avoid being terminated
+                if ($pong_diff >= $this->pongTimeout) {
+                    $this->userOffline($client);
+                    // Terminate fiber
                     return;
                 }
 
@@ -168,7 +198,13 @@ trait WebsocketClientConnection
             }
         });
 
-        $fiber->start($client_id);
+        $fiber->start();
         $this->fibers->enqueue($fiber);
+    }
+
+    protected function userOffline(array $client): void {
+        fclose($client['socket']);
+        unset($this->clients[(int)$client]);
+        $this->publishUserStatus($client['user_id'], 'offline');
     }
 }

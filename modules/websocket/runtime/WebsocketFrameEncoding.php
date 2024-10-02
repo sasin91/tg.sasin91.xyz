@@ -2,13 +2,14 @@
 
 trait WebsocketFrameEncoding
 {
-    private function encodeWebSocketFrame(string $message): string
+    private function encodeWebSocketFrame(string $message, int $opcode = 0x1): string
     {
         $frameHead = [];
         $payloadLength = strlen($message);
 
         // Frame header: FIN, Opcode 0x1 (text frame)
-        $frameHead[0] = 129;
+        // $frameHead[0] = 129;
+        $frameHead[0] = 0x80 | $opcode; // FIN bit set, custom opcode (0x1 for text, 0x9 for ping, etc.)
 
         if ($payloadLength <= 125) {
             $frameHead[1] = $payloadLength;
@@ -40,8 +41,13 @@ trait WebsocketFrameEncoding
 
         // Read the first byte
         $firstByte = ord($data[0]);
-        $fin = ($firstByte >> 7) & 0b1; // FIN bit
-        $opcode = $firstByte & 0b00001111; // Opcode
+        $fin = ($firstByte >> 7) & 0b1;
+        $opcode = $firstByte & 0b00001111; // 0x0F === 0b00001111
+        
+        // @see https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#pings_and_pongs_the_heartbeat_of_websockets
+        if ($opcode === 0xA) {
+            return ['type' => 'pong', 'payload' => ''];
+        }
 
         // Read the second byte
         $secondByte = ord($data[1]);
