@@ -21,8 +21,8 @@ spl_autoload_register(function ($class_name) {
  * because it's the only place where autoloading is useful
  * e.g. instantiating a trongate controller which extends Trongate 
  */
-class WebsocketMessageHandler {
-    public function controller_action(array $json, array $client) {
+class Trongate_controller_action {
+    public function call(array $json, array $client) {
         $module = $json['module'] ?? null;
         $controller = $json['controller'] ?? ucwords($module);
         $action = $json['action'] ?? '_on_websocket_message';
@@ -34,6 +34,6 @@ class WebsocketMessageHandler {
             return $controllerInstance->$action($json, $client);
         }
 
-        return 'Invalid request';
+        return "Error: Controller [$controller] not found.";
     }
 }

@@ -5,9 +5,9 @@ trait WebsocketClientConnection
     /**
      * Lazily instantiated message handler instance
      * 
-     * @var null|WebsocketMessageHandler
+     * @var null|Trongate_controller_action
      */
-    protected ?WebsocketMessageHandler $message_handler = null;
+    protected ?Trongate_controller_action $controller_action = null;
 
     /**
      * Accepts new client connections and initializes the client session.
@@ -149,19 +149,23 @@ trait WebsocketClientConnection
         $this->fibers->enqueue($fiber);
     }
 
-    protected function message_handler(): WebsocketMessageHandler
+    protected function processWebSocketRequest(array $json, int $client_id): string
     {
-        if (!$this->message_handler) {
-            require_once __DIR__ . '/WebsocketMessageHandler.php';
-            $this->message_handler = new WebsocketMessageHandler();
+        if (isset($json['module'])) {
+            return $this->controller_action()->call($json, $this->clients[$client_id]);
         }
 
-        return $this->message_handler;   
+        return 'Invalid request.';
     }
 
-    protected function processWebSocketRequest($json, $client_id): string
+    protected function controller_action(): Trongate_controller_action
     {
-        return $this->message_handler()->controller_action($json, $this->clients[$client_id]);
+        if (!$this->controller_action) {
+            require_once __DIR__ . '/Trongate_controler_action.php';
+            $this->controller_action = new Trongate_controller_action();
+        }
+
+        return $this->controller_action;   
     }
 
     /**
