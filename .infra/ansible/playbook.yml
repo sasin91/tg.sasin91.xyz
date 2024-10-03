@@ -28,3 +28,4 @@
 - hosts: websocket
   roles:
     - websocket
+    - icecast

@@ -1,0 +1,31 @@
+---
+- name: Ensure EPEL repository is enabled
+  ansible.builtin.yum:
+    name: epel-release
+    state: present
+
+- name: Install Icecast
+  ansible.builtin.yum:
+    name: icecast
+    state: present
+
+- name: Create Icecast configuration directory
+  ansible.builtin.file:
+    path: /etc/icecast
+    state: directory
+    owner: icecast
+    group: icecast
+
+- name: Configure Icecast
+  ansible.builtin.template:
+    src: icecast.xml.j2
+    dest: /etc/icecast/icecast.xml
+    owner: icecast
+    group: icecast
+    mode: '0644'
+
+- name: Enable and start Icecast service
+  ansible.builtin.systemd:
+    name: icecast
+    enabled: yes
+    state: started

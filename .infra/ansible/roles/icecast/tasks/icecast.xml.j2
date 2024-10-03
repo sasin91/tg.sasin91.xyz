@@ -1,0 +1,47 @@
+<icecast>
+    <limits>
+        <clients>100</clients>
+        <sources>2</sources>
+    </limits>
+
+    <authentication>
+        <admin-user>{{ icecast_admin_username }}</admin-user>
+        <admin-password>{{ icecast_admin_password }}</admin-password>
+    </authentication>
+
+    <hostname>localhost</hostname>
+    <listen-socket>
+        <port>{{ icecast_port }}</port>
+    </listen-socket>
+
+    <fileserve>1</fileserve>
+
+    <paths>
+        <basedir>/usr/share/icecast</basedir>
+        <logdir>/var/log/icecast</logdir>
+        <webroot>/usr/share/icecast/web</webroot>
+        <adminroot>/usr/share/icecast/admin</adminroot>
+    </paths>
+
+    <logging>
+        <accesslog>/var/log/icecast/access.log</accesslog>
+        <errorlog>/var/log/icecast/error.log</errorlog>
+        <loglevel>3</loglevel>
+    </logging>
+
+    <security>
+        <chroot>0</chroot>
+    </security>
+
+    <authentication>
+        <source-password>{{ icecast_source_password }}</source-password>
+        <relay-password>{{ icecast_relay_password }}</relay-password>
+        <admin-user>{{ icecast_admin_username }}</admin-user>
+        <admin-password>{{ icecast_admin_password }}</admin-password>
+    </authentication>
+
+    <mount>
+        <mount-name>/stream</mount-name>
+        <password>{{ icecast_client_password }}</password>
+    </mount>
+</icecast>
