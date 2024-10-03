@@ -5,6 +5,8 @@ class Chat extends Trongate {
      $data = $json['data'];
      $userId = $state['user_id'];
 
+     var_dump($data, $state);
+
      return $data;
   } 
 }

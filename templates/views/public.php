@@ -84,6 +84,81 @@
     <script src="js/fingerprint.js"></script>
     <script src="js/language-selector.js"></script>
     <script>
+        const socket = (function (url) {
+            const state = {
+                socket: undefined,
+                fingerprint: '',
+                num_online: 0,
+                onopen: [],
+                onclose: [],
+                onerror: [],
+                onmessage: []
+            };
+
+            state.onclose.push((event) => {
+                debounce(new_websocket, 1000);
+            });
+
+            state.onmessage.push((data, event) => {
+                switch(data.channel) {
+                    case 'state':
+                        state.num_online = data.message.num_online;
+                    break;
+
+                    case 'user_status':
+                        if (data.message.status === 'online') {
+                            state.num_online++;
+                        } else {
+                            state.num_online--;
+                        }
+
+                        online_count.forEach((element) => {
+                            element.innerHTML = `${state.num_online} Online`;
+                        });
+                    break;
+                    
+                    case 'chat_message':
+                        // TODO
+                        console.log(data.message);
+                    break;    
+                }
+            });
+
+            function new_websocket() {
+                const instance = new WebSocket(url);
+
+                instance.onopen = function (event) {
+                    for (const handler of state.onopen) {
+                        handler(event);
+                    }
+                };
+
+                instance.onclose = function (event) {
+                    for (const handler of state.onclose) {
+                        handler(event);
+                    }
+                };
+
+                instance.onerror = function (event) {
+                    for (const handler of state.onerror) {
+                        handler(event);
+                    }
+                };
+
+                instance.onmessage = function (event) {
+                    const data = JSON.parse(event.data);
+
+                    for (const handler of state.onmessage) {
+                        handler(data, event);
+                    }
+                };
+
+                return instance;
+            }
+
+            return state;
+        })(`<?= WEBSOCKET_URL ?>?fingerprint=${fingerprint}&trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`);
+
         let fingerprint;
 
         const online_count = document.querySelectorAll('.online_count');
@@ -98,32 +173,7 @@
             };
 
             socket.onmessage = function(event) {
-                const data = JSON.parse(event.data);
 
-                switch(data.channel) {
-                    case 'state':
-                        num_online = data.message.num_online;
-                    break;
-
-                    case 'user_status':
-                        if (data.message.status === 'online') {
-                            num_online++;
-                        } else {
-                            num_online--;
-                        }
-
-                        online_count.forEach((element) => {
-                            element.innerHTML = `${num_online} Online`;
-                        });
-                    break;
-                    
-                    case 'chat_message':
-                        // TODO
-                        console.log(data.message);
-                    break;    
-                }
-
-                console.log("Message received:", data);
             };
 
             socket.onclose = function(event) {

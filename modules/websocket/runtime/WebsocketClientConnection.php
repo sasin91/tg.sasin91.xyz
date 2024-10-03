@@ -155,6 +155,22 @@ trait WebsocketClientConnection
             return $this->controller_action()->call($json, $this->clients[$client_id]);
         }
 
+        if (isset($json['type'])) {
+            switch ($json['type']) {
+                case 'offer':
+                case 'answer':
+                case 'candidate':
+                    if (isset($this->clients[$json['target']])) {
+                        $target_client = $this->clients[$json['target']];
+                        $this->fwrite($target_client['socket'], json_encode($json));
+                    }
+                    break;
+                case 'register':
+                    // no-op; already registered.
+                    break;
+            }
+        }
+
         return 'Invalid request.';
     }
 

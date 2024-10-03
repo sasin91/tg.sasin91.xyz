@@ -1,7 +1,7 @@
 <?php
 //Database settings
-define('HOST', '127.0.0.1');
+define('HOST', 'localhost');
 define('PORT', '3306');
 define('USER', 'root');
-define('PASSWORD', '');
+define('PASSWORD', 'jonas2904');
 define('DATABASE', 'sasin91');
