@@ -1,0 +1,1 @@
+[{"module_name":"live_streams","record_name_singular":"live stream","record_name_plural":"live streams","identifier_column":"id"},{"module_name":"chats","record_name_singular":"chat","record_name_plural":"chats","identifier_column":"id"},{"relationship_type":"one to many"}]
