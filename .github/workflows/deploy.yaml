@@ -31,8 +31,7 @@ jobs:
 
           # Update URL in /config/config.php
           CONFIG_FILE="./config/config.php"
-          sed -i "s|http://localhost/|https://tg.sasin91.xyz/|g" $CONFIG_FILE
-          sed -i "s|ws://localhost/ws|wss://tg.sasin91.xyz/ws|g" $CONFIG_FILE
+          sed -i "s|sasin91.test|tg.sasin91.xyz|g" $CONFIG_FILE
 
       - name: 🔐 Install SSH Key
         uses: shimataro/ssh-key-action@v2
