@@ -80,128 +80,19 @@
 		<ul auto-populate="true"></ul>
 	</div>
 	<script src="js/app.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/fingerprint.js"></script>
+    <script src="js/websocket.js"></script>
     <script src="js/language-selector.js"></script>
     <script>
-        const socket = (function (url) {
-            const state = {
-                socket: undefined,
-                fingerprint: '',
-                num_online: 0,
-                onopen: [],
-                onclose: [],
-                onerror: [],
-                onmessage: []
-            };
-
-            state.onclose.push((event) => {
-                debounce(new_websocket, 1000);
-            });
-
-            state.onmessage.push((data, event) => {
-                switch(data.channel) {
-                    case 'state':
-                        state.num_online = data.message.num_online;
-                    break;
-
-                    case 'user_status':
-                        if (data.message.status === 'online') {
-                            state.num_online++;
-                        } else {
-                            state.num_online--;
-                        }
-
-                        online_count.forEach((element) => {
-                            element.innerHTML = `${state.num_online} Online`;
-                        });
-                    break;
-                    
-                    case 'chat_message':
-                        // TODO
-                        console.log(data.message);
-                    break;    
-                }
-            });
-
-            function new_websocket() {
-                const instance = new WebSocket(url);
-
-                instance.onopen = function (event) {
-                    for (const handler of state.onopen) {
-                        handler(event);
-                    }
-                };
-
-                instance.onclose = function (event) {
-                    for (const handler of state.onclose) {
-                        handler(event);
-                    }
-                };
-
-                instance.onerror = function (event) {
-                    for (const handler of state.onerror) {
-                        handler(event);
-                    }
-                };
-
-                instance.onmessage = function (event) {
-                    const data = JSON.parse(event.data);
-
-                    for (const handler of state.onmessage) {
-                        handler(data, event);
-                    }
-                };
-
-                return instance;
-            }
-
-            return state;
-        })(`<?= WEBSOCKET_URL ?>?fingerprint=${fingerprint}&trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`);
-
-        let fingerprint;
-
         const online_count = document.querySelectorAll('.online_count');
-        let num_online = 0;
 
-        let connectionAttempts = 0;
-        let socket;
-        function connectToWebsocket() {
-            socket = new WebSocket(`<?= WEBSOCKET_URL ?>?fingerprint=${fingerprint}&trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`);
-            socket.onopen = function(event) {
-                console.log("Connection opened:", event);
-            };
+        const socket = new Socket(
+            `<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`
+        );
 
-            socket.onmessage = function(event) {
-
-            };
-
-            socket.onclose = function(event) {
-                console.log("Connection closed:", event);
-
-                debounce(connectToWebsocket, 1000);
-            };
-
-            socket.onerror = function(error) {
-                console.error("WebSocket error:", error);
-            };
-        
-            connectionAttempts++;
-        }
-
-        document.addEventListener('DOMContentLoaded', async function () {
-            const fingerprintBuffer = await crypto.subtle.digest(
-                'SHA-256', 
-                new TextEncoder().encode(
-                    generateBrowserFingerprint()
-                )
-            );
-
-            fingerprint = Array.from(new Uint8Array(fingerprintBuffer))
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-
-            connectToWebsocket();
+        socket.onStateChange('num_online', (num_online) => {
+            online_count.forEach((element) => {
+                element.innerHTML = `${num_online} Online`;
+            });
         });
     </script>
 	<?= $additional_includes_btm ?>
