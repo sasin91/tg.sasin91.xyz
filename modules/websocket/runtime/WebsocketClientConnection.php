@@ -208,6 +208,12 @@ trait WebsocketClientConnection
                     // Prevent spamming pings
                     && $ping_diff > ($this->pingTimeout / 2)
                 ) {
+                    if (!is_resource($client['socket'])) {
+                        $this->userOffline($client);
+                        // Terminate fiber
+                        return;
+                    }
+
                     // @see https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#pings_and_pongs_the_heartbeat_of_websockets
                     $pingFrame = $this->encodeWebSocketFrame('', 0x9);
                     $ping = @fwrite(
