@@ -28,42 +28,100 @@ const webrtc = {
             return webrtc.connection.addIceCandidate(new RTCIceCandidate(message.ice));
         }
     },
-    goLive: async function (id) {
-        const response = await fetch(`live_streams/webrtc/${id}`, {
+    start: async function (id) {
+        const response = await fetch(`live_streams/webrtc_start/${id}`, {
             method: 'POST'
         });
 
         const { message } = await response.json();
 
-        if (response.status === 200) {
-            webrtc.stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
-            webrtc.appendVideoToGrid(webrtc.stream);
-            webrtc.connection = new RTCPeerConnection();
-
-            webrtc.stream.getTracks().forEach(track => webrtc.connection.addTrack(track, webrtc.stream));
-
-            webrtc.connection.onicecandidate = (ev) => {
-                if (ev.candidate) {
-                    socket.send({ ice: ev.candidate });
-                }
-            };
-
-            webrtc.connection.ontrack = (ev) => {
-                webrtc.appendVideoToGrid(ev.streams[0]);
-            };
-
-            toast(message, 'success text-fancy');
-        } else {
+        if (response.status !== 200) {
             toast(message, 'error');
+
+            return false;
         }
+
+        webrtc.stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+        webrtc.appendVideoToGrid(webrtc.stream);
+        webrtc.connection = new RTCPeerConnection();
+
+        webrtc.stream.getTracks().forEach(track => webrtc.connection.addTrack(track, webrtc.stream));
+
+        webrtc.connection.onicecandidate = (ev) => {
+            if (ev.candidate) {
+                socket.send(JSON.stringify({ ice: ev.candidate }));
+            }
+        };
+
+        webrtc.connection.ontrack = (ev) => {
+            webrtc.appendVideoToGrid(ev.streams[0]);
+        };
+
+        const offer = await webrtc.connection.createOffer();
+        webrtc.connection.setLocalDescription(offer);
+        socket.send(JSON.stringify({
+            type: 'webrtc',
+            intent: 'start',
+            payload: {
+                sdp: offer
+            }
+        }));
+
+        toast(message, 'success');
+
+        return true;
+    },
+
+    stop: async function (id) {
+        const response = await fetch(`live_streams/webrtc_stop/${id}`, {
+            method: 'POST'
+        });
+
+        const { message } = await response.json();
+
+        if (response.status !== 200) {
+            toast(message, 'error');
+
+            return false;
+        }
+
+        if (webrtc.connection) {
+            webrtc.connection.close();
+            webrtc.connection = null;
+        }
+
+        if (webrtc.stream) {
+            webrtc.stream.getTracks().forEach(track => track.stop());
+            webrtc.stream = null;
+        }
+
+        webrtc.grid.innerHTML = '';
     }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    const webrtcGoLiveButton = document.getElementById('webrtc_go-live');
-    const id = webrtcGoLiveButton.dataset.id;
+    const webrtcActionButton = document.getElementById('webrtc_action');
+    const id = webrtcActionButton.dataset.id;
+    const templates = document.getElementsByTagName('template');
+    const goLiveTemplate = templates.namedItem('go_live');
+    const goOfflineTemplate = templates.namedItem('go_offline');
 
-    webrtcGoLiveButton.addEventListener('click', () => {
-        return webrtc.goLive(id);
+    webrtcActionButton.addEventListener('click', () => {
+        const action = webrtcActionButton.dataset.action;
+        webrtcActionButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+
+        webrtc[action](id).then((live) => {
+            let content = '';
+
+            if (live) {
+                content = document.importNode(goOfflineTemplate.content.children[0], true)
+                webrtcActionButton.dataset.action = 'stop';
+            } else {
+                content = document.importNode(goLiveTemplate.content.children[0], true);
+                webrtcActionButton.dataset.action = 'start';
+            }
+
+            webrtcActionButton.innerHTML = content.outerHTML;
+        });
     }, false);
 });

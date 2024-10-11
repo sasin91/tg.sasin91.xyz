@@ -10,6 +10,13 @@ trait WebsocketClientConnection
     protected ?Trongate_controller_action $controller_action = null;
 
     /**
+     * Lazily instantiated webrtc message handler instance
+     *
+     * @var WebRTC|null
+     */
+    protected ?WebRTC $webrtc = null;
+
+    /**
      * Accepts new client connections and initializes the client session.
      *
      * @return void
@@ -83,7 +90,6 @@ trait WebsocketClientConnection
             $this->publishUserStatus($userId, 'online');
 
             $unique_clients = [];
-            $num_clients = count($this->clients);
 
             foreach($this->clients as $client) {
                 if (isset($unique_clients[$client['fingerprint']])) {
@@ -151,37 +157,33 @@ trait WebsocketClientConnection
 
     protected function processWebSocketRequest(array $json, int $client_id): string
     {
-        if (isset($json['module'])) {
-            return $this->controller_action()->call($json, $this->clients[$client_id]);
-        }
+        $type = $json['type'] ?? null;
 
-        if (isset($json['type'])) {
-            switch ($json['type']) {
-                case 'offer':
-                case 'answer':
-                case 'candidate':
-                    if (isset($this->clients[$json['target']])) {
-                        $target_client = $this->clients[$json['target']];
-                        $this->fwrite($target_client['socket'], json_encode($json));
-                    }
-                    break;
-                case 'register':
-                    // no-op; already registered.
-                    break;
-            }
-        }
-
-        return 'Invalid request.';
+        return match ($type) {
+            'controller_action' => $this->controller_action()->call($json, $this->clients[$client_id]),
+            'webrtc' => $this->webrtc()->call($json, $this->clients[$client_id]),
+            default => "Unsupported request type: $type",
+        };
     }
 
     protected function controller_action(): Trongate_controller_action
     {
         if (!$this->controller_action) {
-            require_once __DIR__ . '/Trongate_controler_action.php';
+            require_once __DIR__ . '/Trongate_controller_action.php';
             $this->controller_action = new Trongate_controller_action();
         }
 
         return $this->controller_action;   
+    }
+
+    protected function webrtc(): WebRTC
+    {
+        if (!$this->webrtc) {
+            require_once __DIR__ . '/WebRTC.php';
+            $this->webrtc = new WebRTC($this);
+        }
+
+        return $this->webrtc;
     }
 
     /**
@@ -239,7 +241,9 @@ trait WebsocketClientConnection
     }
 
     protected function userOffline(array $client): void {
-        fclose($client['socket']);
+        if (is_resource($client['socket'])) {
+            fclose($client['socket']);
+        }
         unset($this->clients[(int)$client]);
         $this->publishUserStatus($client['user_id'], 'offline');
     }

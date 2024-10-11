@@ -150,7 +150,7 @@ function toast(message, classes = 'info') {
 
   // Create a new toast element
   const toast = document.createElement('div');
-  toast.classList.add('toast', ...classes);
+  toast.classList.add('toast', ...classes.split(' '));
   toast.textContent = message;
 
   // Append the toast to the container

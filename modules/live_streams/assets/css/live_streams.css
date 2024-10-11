@@ -101,6 +101,7 @@ dd {
     font-weight: 600;
     color: var(--primary);
     border: none;
+    cursor: pointer;
 }
 
 .action > * + * {

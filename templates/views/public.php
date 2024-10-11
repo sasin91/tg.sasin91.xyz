@@ -69,7 +69,11 @@
 				</div>
 			</div>
 		</header>
-		<main><?= Template::display($data) ?></main>
+		<main>
+            <div id="toast-container"></div>
+
+            <?= Template::display($data) ?>
+        </main>
 	</div>
 	<footer>
 		<div class="container">

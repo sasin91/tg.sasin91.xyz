@@ -110,17 +110,22 @@ class Live_streams extends Trongate {
     }
 
     public function start(): void {
+        $this->module('localizations');
+        $t = $this->localizations->_translator(get_language());
+
         $update_id = (int) segment(3);
         $data = $this->get_data_from_db($update_id);
         $data['view_file'] = 'go_live';
         $data['additional_includes_top'] = [
-            'live_streams_module/css/go_live.css'
+            'live_streams_module/css/go_live.css',
+            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'
         ];
+        $data['t'] = $t;
 
         $this->template('public', $data);
     }
 
-    public function webrtc(): void {
+    public function webrtc_start(): void {
         $update_id = (int) segment(3);
         $data = $this->get_data_from_db($update_id);
 
@@ -138,6 +143,27 @@ class Live_streams extends Trongate {
             echo json_encode(['message' => $t('Live stream started.')]);
 
             $this->model->update($update_id, ['live' => 1]);
+        }
+    }
+
+    public function webrtc_stop(): void {
+        $update_id = (int) segment(3);
+        $data = $this->get_data_from_db($update_id);
+
+        $this->module('trongate_security');
+        $this->trongate_security->_make_sure_allowed();
+
+        $this->module('localizations');
+        $t = $this->localizations->_translator(get_language());
+
+        if ($data['live'] === 1) {
+            http_response_code(200);
+            echo json_encode(['message' => $t('Live stream ended.')]);
+
+            $this->model->update($update_id, ['live' => 0]);
+        } else {
+            http_response_code(403);
+            echo json_encode(['message' => $t('Live stream has not started.')]);
         }
     }
     

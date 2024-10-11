@@ -72,7 +72,7 @@
                                     <?= $t('Join') ?>
                                 </a>
                             <?php else: ?>
-                                <a mx-get="/live_streams/start/<?= $stream['id'] ?>" mx-target="body">
+                                <a href="/live_streams/start/<?= $stream['id'] ?>">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100" height="100" fill="var(--primary)">
                                         <path d="M256 144c-66.274 0-120 53.726-120 120s53.726 120 120 120 120-53.726 120-120-53.726-120-120-120zm0 192c-39.701 0-72-32.299-72-72s32.299-72 72-72 72 32.299 72 72-32.299 72-72 72zm240-232h-88c-22.091 0-40-17.909-40-40 0-13.255-10.745-24-24-24h-128c-13.255 0-24 10.745-24 24 0 22.091-17.909 40-40 40h-88c-26.51 0-48 21.49-48 48v256c0 26.51 21.49 48 48 48h448c26.51 0 48-21.49 48-48v-256c0-26.51-21.49-48-48-48zm8 304c0 4.418-3.582 8-8 8h-448c-4.418 0-8-3.582-8-8v-256c0-4.418 3.582-8 8-8h92.118c29.794 0 50.188-20.497 50.188-48 0-4.418 3.582-8 8-8h128c4.418 0 8 3.582 8 8 0 27.503 20.394 48 50.188 48h92.118c4.418 0 8 3.582 8 8v256z"/>
                                     </svg>
@@ -133,4 +133,8 @@
             element.addEventListener('click', watchLiveStream(element.dataset.playlist));
         });
     });
+
+    document.addEventListener('trongate:afterSwap', function (evt) {
+        console.log('afterSwap', evt);
+    })
 </script>

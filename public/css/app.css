@@ -278,8 +278,8 @@ footer a {
 }
 
 .toast {
-  background-color: #333;
-  color: #fff;
+  background-color: var(--primary);
+  color: var(--primary-color);
   padding: 15px;
   margin-bottom: 10px;
   border-radius: 5px;
