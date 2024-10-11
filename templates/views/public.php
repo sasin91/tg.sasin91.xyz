@@ -30,9 +30,12 @@
                     <span class="online_count badge">0 Online</span>
 				</div>
 				<div>
-					<ul id="top-nav">
+            <ul id="top-nav">
               <li>
-                  <?= anchor('blog', '<i class="fa fa-newspaper-o"></i> Blog') ?>
+                <?= anchor('live_streams', '<i class="fa fa-camera-o"></i> Streams') ?>
+              </li>
+              <li>
+                <?= anchor('blog', '<i class="fa fa-newspaper-o"></i> Blog') ?>
               </li>
               <li>
                 <language-selector />
@@ -82,6 +85,7 @@
 	<script src="js/app.js"></script>
     <script src="js/websocket.js"></script>
     <script src="js/language-selector.js"></script>
+    <script src="js/trongate-mx.js"></script>
     <script>
         const online_count = document.querySelectorAll('.online_count');
 

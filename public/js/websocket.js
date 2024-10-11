@@ -209,4 +209,8 @@ class Socket {
             this.flags.reconnect_on_close = original_reconnect_flag;
         }
     }
+
+    send(message) {
+        return this.instance.send(message);
+    }
 }

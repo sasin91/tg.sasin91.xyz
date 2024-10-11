@@ -144,3 +144,26 @@ body.addEventListener("click", (event) => {
 });
 
 document.addEventListener('keydown', handleEscapeKey);
+
+function toast(message, classes = 'info') {
+  const toastContainer = document.getElementById('toast-container');
+
+  // Create a new toast element
+  const toast = document.createElement('div');
+  toast.classList.add('toast', ...classes);
+  toast.textContent = message;
+
+  // Append the toast to the container
+  toastContainer.appendChild(toast);
+
+  // Trigger the show animation
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+
+  // Remove the toast after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300); // Remove after fade out
+  }, 3000);
+}

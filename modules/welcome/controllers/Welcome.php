@@ -7,10 +7,10 @@ class Welcome extends Trongate {
 	 * @return void
 	 */
 	public function index(): void {
-        $data['view_module'] = 'welcome';
-        $data['view_file'] = 'welcome';
-        $data['additional_includes_top'] = [
-			'welcome_module/css/welcome.css'
+    $data['view_module'] = 'welcome';
+    $data['view_file'] = 'welcome';
+    $data['additional_includes_top'] = [
+      'welcome_module/css/welcome.css'
 		];
 
 		$this->module('localizations');
@@ -18,7 +18,7 @@ class Welcome extends Trongate {
 			get_language()
 		);
 
-        $this->template('public', $data);
+    $this->template('public', $data);
 	}
 
 }

@@ -13,6 +13,133 @@ class Live_streams extends Trongate {
         $data['upload_to_module'] = true;
         return $data;
     }
+
+    public function index(): void {
+        $this->module('trongate_filezone');
+        $this->module('localizations');
+
+        $data['view_module'] = 'live_streams'; 
+        $data['t'] = $this->localizations->_translator(get_language());
+
+        $live_streams = $this->model->query('
+            SELECT * 
+            FROM live_streams 
+            WHERE live = true
+            OR start_date_and_time BETWEEN NOW() - INTERVAL 40 MINUTE AND NOW() + INTERVAL 1 DAY
+            ORDER BY start_date_and_time DESC
+          ', 
+          'array'
+        );
+
+        if (empty($live_streams)) {
+            $data['view_file'] = 'empty';
+        } else {
+            $data['view_file'] = 'live_streams';
+            $data['streams'] = $live_streams;
+
+            if (is_array($live_streams)) {
+                $pictures_dir = __DIR__.'/../assets/live_streams_pictures/';
+                $pictures_path = "live_streams_module/live_streams_pictures";
+
+                foreach ($data['streams'] as &$stream) {
+                    $stream['pictures'] = [];
+
+                    if (is_dir($dir = $pictures_dir.$stream['id'])) {
+                        $pictures = new FilesystemIterator($dir, FilesystemIterator::SKIP_DOTS);
+
+                        foreach ($pictures as $picture) {
+                            $stream['pictures'][] = "$pictures_path/{$stream['id']}/{$picture->getFilename()}";
+                        }
+                    }
+                }
+            }
+
+            $data['additional_includes_top'] = [
+                'live_streams_module/css/live_streams.css'
+            ];
+        }
+
+        $this->template('public', $data);
+    }
+
+    public function new(): void {
+      $this->module('localizations');
+
+      $data = $this->get_data_from_post();
+      $t = $this->localizations->_translator(get_language());
+         
+      $submit = post('submit', true);
+
+      if ((string)$submit !== '') {
+        if ($submit === 'Submit') { 
+          $this->validation->set_rules('title', 'Title', 'required|min_length[2]|max_length[255]');
+          $this->validation->set_rules('description', 'Description', 'required|min_length[2]');
+          $this->validation->set_rules('summary', 'Summary', 'min_length[2]|max_length[255]');
+          $this->validation->set_rules('start_date_and_time', 'Start Date And Time', 'required|valid_datetimepicker_us');
+          $this->validation->set_rules('ingest', 'Ingest', 'min_length[2]|max_length[255]');
+          $this->validation->set_rules('playlist', 'Playlist', 'min_length[2]|max_length[255]');
+
+          $validated = $this->validation->run();
+
+          if ($validated === true) {
+            $data['start_date_and_time'] = str_replace(' at ', '', $data['start_date_and_time']);
+            $data['start_date_and_time'] = date('Y-m-d H:i', strtotime($data['start_date_and_time']));
+            $data['live'] = $data['live'] !== '';        
+            $this->model->insert($data, 'live_streams');
+            set_flashdata($t('Live stream created.'));
+
+            redirect('live_streams');
+            return;
+          }
+        }
+      }
+
+      $data['headline'] = $t('Create live stream');
+      $data['cancel_url'] = BASE_URL.'live_streams';
+
+      $data['form_location'] = BASE_URL.'live_streams/new';
+      $data['view_file'] = 'create';
+      $data['additional_includes_top'] = [
+        'css/trongate-datetime.css'
+      ];
+      $data['additional_includes_btm'] = [
+        'js/trongate-datetime.js' 
+      ];
+      $data['t'] = $t; 
+      $this->template('public', $data);
+    }
+
+    public function start(): void {
+        $update_id = (int) segment(3);
+        $data = $this->get_data_from_db($update_id);
+        $data['view_file'] = 'go_live';
+        $data['additional_includes_top'] = [
+            'live_streams_module/css/go_live.css'
+        ];
+
+        $this->template('public', $data);
+    }
+
+    public function webrtc(): void {
+        $update_id = (int) segment(3);
+        $data = $this->get_data_from_db($update_id);
+
+        $this->module('trongate_security');
+        $this->trongate_security->_make_sure_allowed();
+
+        $this->module('localizations');
+        $t = $this->localizations->_translator(get_language());
+
+        if ($data['live'] === 1) {
+            http_response_code(403);
+            echo json_encode(['message' => $t('Live stream is already live.')]);
+        } else {
+            http_response_code(200);
+            echo json_encode(['message' => $t('Live stream started.')]);
+
+            $this->model->update($update_id, ['live' => 1]);
+        }
+    }
     
     /**
      * Display a webpage with a form for creating or updating a record.
