@@ -83,8 +83,8 @@
     </section>
 </article>
 
-<script src="/js/websocket.js"></script>
-<script src="/live_streams_module/js/live_streams.js"></script>
+<!-- Defer is important here, as the script expects websocket.js to be loaded first -->
+<script defer src="/live_streams_module/js/live_streams.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {

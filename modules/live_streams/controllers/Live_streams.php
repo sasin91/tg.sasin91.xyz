@@ -6,6 +6,8 @@
  * @property-read Trongate_security $trongate_security
  */
 class Live_streams extends Trongate {
+    const PICTURES_DIR = __DIR__.'/../assets/live_streams_pictures/';
+    const PICTURES_URL_PATH = "live_streams_module/live_streams_pictures";
 
     private $default_limit = 20;
     private $per_page_options = array(10, 20, 50, 100);    
@@ -41,30 +43,7 @@ class Live_streams extends Trongate {
             $data['view_file'] = 'empty';
         } else {
             $data['view_file'] = 'live_streams';
-            $data['streams'] = $live_streams;
-
-            if (is_array($live_streams)) {
-                $pictures_dir = __DIR__.'/../assets/live_streams_pictures/';
-                $pictures_path = "live_streams_module/live_streams_pictures";
-
-                foreach ($data['streams'] as &$stream) {
-                    // TODO: Read from redis?
-                    $stream['viewers'] = 0;
-
-                    // TODO: authz, _make_sure_allowed()?
-                    $stream['can_be_started'] = true;
-
-                    $stream['pictures'] = [];
-
-                    if (is_dir($dir = $pictures_dir.$stream['id'])) {
-                        $pictures = new FilesystemIterator($dir, FilesystemIterator::SKIP_DOTS);
-
-                        foreach ($pictures as $picture) {
-                            $stream['pictures'][] = "$pictures_path/{$stream['id']}/{$picture->getFilename()}";
-                        }
-                    }
-                }
-            }
+            $data['streams'] = $this->_transform_live_streams($live_streams);
 
             $data['additional_includes_top'] = [
                 'live_streams_module/css/live_streams.css'
@@ -97,11 +76,18 @@ class Live_streams extends Trongate {
             $data['start_date_and_time'] = str_replace(' at ', '', $data['start_date_and_time']);
             $data['start_date_and_time'] = date('Y-m-d H:i', strtotime($data['start_date_and_time']));
             $data['live'] = $data['live'] !== '';        
-            $this->model->insert($data, 'live_streams');
+            $update_id = $this->model->insert($data, 'live_streams');
             set_flashdata($t('Live stream created.'));
+          
+            redirect('live_streams', false);
 
-            redirect('live_streams');
-            return;
+            $this->module('websocket'); 
+            $this->websocket->_publish('live_streams', json_encode([
+              'status' => 'new',
+              'id' => $update_id,
+            ]));
+
+            die();
           }
         }
       }
@@ -181,6 +167,8 @@ class Live_streams extends Trongate {
                 'id' => $update_id,
             ]));
         }
+
+        die();
     }
 
     public function webrtc_stop(): void {
@@ -211,6 +199,8 @@ class Live_streams extends Trongate {
             http_response_code(403);
             echo json_encode(['message' => $t('Live stream has not started.')]);
         }
+
+        die();
     }
     
     /**
@@ -339,12 +329,13 @@ class Live_streams extends Trongate {
             if ($result === true) {
 
                 $update_id = (int) segment(3);
+                $is_updating = $update_id > 0;
                 $data = $this->get_data_from_post();
                 $data['start_date_and_time'] = str_replace(' at ', '', $data['start_date_and_time']);
                 $data['start_date_and_time'] = date('Y-m-d H:i', strtotime($data['start_date_and_time']));
                 $data['live'] = ($data['live'] === 1 ? 1 : 0);
                 
-                if ($update_id>0) {
+                if ($is_updating) {
                     //update an existing record
                     $this->model->update($update_id, $data, 'live_streams');
                     $flash_msg = 'The record was successfully updated';
@@ -355,8 +346,13 @@ class Live_streams extends Trongate {
                 }
 
                 set_flashdata($flash_msg);
-                redirect('live_streams/show/'.$update_id);
-
+                redirect('live_streams/show/'.$update_id, false);
+                $this->module('websocket');
+                $this->websocket->_publish('live_streams', json_encode([
+                  'status' => $is_updating ? 'updated' : 'new',
+                  'id' => $update_id,
+                ]));
+                die();
             } else {
                 //form submission error
                 $this->create();
@@ -392,7 +388,15 @@ class Live_streams extends Trongate {
             set_flashdata($flash_msg);
 
             //redirect to the manage page
-            redirect('live_streams/manage');
+            redirect('live_streams/manage', false);
+            
+            $this->module('websocket');
+            $this->websocket->_publish('live_streams', json_encode([
+              'status' => 'deleted',
+              'id' => $params['update_id'],
+            ]));
+
+            die();
         }
     }
 
@@ -516,4 +520,47 @@ class Live_streams extends Trongate {
         return $data;
     }
 
+    public function _transform_api_response(array $response): array {
+      $body = json_decode($response['body'], true);
+      
+      if (isset($body['id'])) {
+        $body = $this->_transform_live_stream($body);
+      } else {
+        $body = $this->_transform_live_streams($body);
+      }
+      
+      $response['body'] = json_encode($body);
+
+      return $response;
+    }
+
+    public function _transform_live_streams(array $streams): array {
+        $transformed_streams = [];
+
+        foreach ($streams as $stream) {
+            $transformed_streams[] = $this->_transform_live_stream($stream);
+        }
+
+        return $transformed_streams;
+    }
+
+    public function _transform_live_stream(array $stream): array {
+      // TODO: Read from redis?
+      $stream['viewers'] = 0;
+
+      // TODO: authz, _make_sure_allowed()?
+      $stream['can_be_started'] = true;
+
+      $stream['pictures'] = [];
+
+      if (is_dir($dir = self::PICTURES_DIR.$stream['id'])) {
+          $pictures = new FilesystemIterator($dir, FilesystemIterator::SKIP_DOTS);
+
+          foreach ($pictures as $picture) {
+              $stream['pictures'][] = self::PICTURES_URL_PATH . "/{$stream['id']}/{$picture->getFilename()}";
+          }
+      }
+    
+      return $stream;
+    }
 }

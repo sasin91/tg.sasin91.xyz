@@ -191,6 +191,21 @@ class Socket {
         }
     }
 
+    /**
+     * Convenient wrapper for addEventListener(`message`, ...) with channel filtering.
+     *
+     * @param {String} channel
+     * @param {(message) => void} callback
+     * @returns {void}
+     */
+    onMessage(channel, callback) {
+      this.addEventListener('message', (data) => {
+        if (data.channel === channel) {
+          callback(data.message);
+        }
+      });
+    }
+
     setUrlParam(key, value = undefined) {
         if (Array.isArray(key)) {
             key.forEach((v, k) => {

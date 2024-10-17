@@ -8,7 +8,8 @@
         "roles": [
             "admin"
         ]
-    }
+    },
+    "afterHook": "_transform_api_response"
   },
   "Get By Post": {
     "url_segments": "api/get/live_streams",
@@ -19,7 +20,8 @@
         "roles": [
             "admin"
         ]
-    }
+    },
+    "afterHook": "_transform_api_response"
   },
   "Find One": {
     "url_segments": "api/get/live_streams/{id}",
@@ -30,7 +32,9 @@
         "name": "id",
         "label": "ID"
       }
-    ]
+    ],
+    "authorization": "*",
+    "afterHook": "_transform_api_response" 
   },
   "Exists": {
     "url_segments": "api/exists/live_streams/{id}",
