@@ -67,16 +67,19 @@ function get_last_segment(): string {
  * Perform an HTTP redirect to the specified URL.
  *
  * @param string $target_url The URL to which the redirect should occur.
+ * @param bool $die (Optional) Whether to stop the script after the redirect. Default is true.
  * @return void
  */
-function redirect(string $target_url): void {
+function redirect(string $target_url, bool $die = true): void {
     $str = substr($target_url, 0, 4);
     if ($str != 'http') {
         $target_url = BASE_URL . $target_url;
     }
 
     header('location: ' . $target_url);
-    die();
+    if ($die) {
+        die();
+    }
 }
 
 /**
