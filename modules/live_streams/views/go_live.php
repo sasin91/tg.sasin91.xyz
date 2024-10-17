@@ -35,6 +35,7 @@ $go_offline_content = ob_get_clean();
                 class="action-button text-fancy"
                 data-action="<?= $live ? 'stop' : 'start' ?>"
                 data-id="<?= $id ?>"
+                data-trongate-token="<?= $token ?>"
         >
             <?= $live ? $go_offline_content : $go_live_content ?>
         </button>

@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * @property-read Localizations $localizations
+ * @property-read Websocket $websocket
+ * @property-read Trongate_security $trongate_security
+ */
 class Live_streams extends Trongate {
 
     private $default_limit = 20;
@@ -42,6 +48,12 @@ class Live_streams extends Trongate {
                 $pictures_path = "live_streams_module/live_streams_pictures";
 
                 foreach ($data['streams'] as &$stream) {
+                    // TODO: Read from redis?
+                    $stream['viewers'] = 0;
+
+                    // TODO: authz, _make_sure_allowed()?
+                    $stream['can_be_started'] = true;
+
                     $stream['pictures'] = [];
 
                     if (is_dir($dir = $pictures_dir.$stream['id'])) {
@@ -109,12 +121,13 @@ class Live_streams extends Trongate {
       $this->template('public', $data);
     }
 
-    public function start(): void {
+  public function start(): void {
         $this->module('localizations');
         $t = $this->localizations->_translator(get_language());
 
         $update_id = (int) segment(3);
         $data = $this->get_data_from_db($update_id);
+
         $data['view_file'] = 'go_live';
         $data['additional_includes_top'] = [
             'live_streams_module/css/go_live.css',
@@ -126,14 +139,29 @@ class Live_streams extends Trongate {
     }
 
     public function webrtc_start(): void {
-        $update_id = (int) segment(3);
-        $data = $this->get_data_from_db($update_id);
-
         $this->module('trongate_security');
         $this->trongate_security->_make_sure_allowed();
 
         $this->module('localizations');
         $t = $this->localizations->_translator(get_language());
+
+        $sdp = post('sdp', true);
+        if (empty($sdp)) {
+            http_send_status(403);
+            echo json_encode([
+                'message' => $t('SDP is required.')
+            ]);
+            return;
+        }
+
+        $update_id = (int) segment(3);
+        $data = $this->get_data_from_db($update_id);
+
+        if ($data === null) {
+            http_send_status(404);
+            echo json_encode(['message' => $t('Live stream not found.')]);
+            return;
+        }
 
         if ($data['live'] === 1) {
             http_response_code(403);
@@ -142,7 +170,16 @@ class Live_streams extends Trongate {
             http_response_code(200);
             echo json_encode(['message' => $t('Live stream started.')]);
 
-            $this->model->update($update_id, ['live' => 1]);
+            $this->model->update($update_id, [
+                'live' => 1,
+                'playlist' => base64_encode(json_encode($sdp))
+            ]);
+
+            $this->module('websocket');
+            $this->websocket->_publish('live_streams', json_encode([
+                'status' => 'live',
+                'id' => $update_id,
+            ]));
         }
     }
 
@@ -160,7 +197,16 @@ class Live_streams extends Trongate {
             http_response_code(200);
             echo json_encode(['message' => $t('Live stream ended.')]);
 
-            $this->model->update($update_id, ['live' => 0]);
+            $this->model->update($update_id, [
+                'live' => 0,
+                'playlist' => null
+            ]);
+
+            $this->module('websocket');
+            $this->websocket->_publish('live_streams', json_encode([
+                'status' => 'offline',
+                'id' => $update_id,
+            ]));
         } else {
             http_response_code(403);
             echo json_encode(['message' => $t('Live stream has not started.')]);

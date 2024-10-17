@@ -28,19 +28,7 @@ const webrtc = {
             return webrtc.connection.addIceCandidate(new RTCIceCandidate(message.ice));
         }
     },
-    start: async function (id) {
-        const response = await fetch(`live_streams/webrtc_start/${id}`, {
-            method: 'POST'
-        });
-
-        const { message } = await response.json();
-
-        if (response.status !== 200) {
-            toast(message, 'error');
-
-            return false;
-        }
-
+    start: async function (id, token) {
         webrtc.stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
         webrtc.appendVideoToGrid(webrtc.stream);
         webrtc.connection = new RTCPeerConnection();
@@ -59,13 +47,37 @@ const webrtc = {
 
         const offer = await webrtc.connection.createOffer();
         webrtc.connection.setLocalDescription(offer);
-        socket.send(JSON.stringify({
-            type: 'webrtc',
-            intent: 'start',
-            payload: {
-                sdp: offer
+
+        const response = await fetch(`live_streams/webrtc_start/${id}`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "TrongateToken": token
+            },
+            body: JSON.stringify({
+              sdp: offer
+            })
+        });
+
+        const { message } = await response.json();
+
+        if (response.status !== 200) {
+            toast(message, 'error');
+
+            if (webrtc.connection) {
+                webrtc.connection.close();
+                webrtc.connection = null;
             }
-        }));
+
+            if (webrtc.stream) {
+                webrtc.stream.getTracks().forEach(track => track.stop());
+                webrtc.stream = null;
+            }
+
+            webrtc.grid.innerHTML = '';
+
+            return false;
+        }
 
         toast(message, 'success');
 
@@ -102,6 +114,7 @@ const webrtc = {
 document.addEventListener('DOMContentLoaded', function() {
     const webrtcActionButton = document.getElementById('webrtc_action');
     const id = webrtcActionButton.dataset.id;
+    const token = webrtcActionButton.dataset.trongateToken;
     const templates = document.getElementsByTagName('template');
     const goLiveTemplate = templates.namedItem('go_live');
     const goOfflineTemplate = templates.namedItem('go_offline');
@@ -110,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const action = webrtcActionButton.dataset.action;
         webrtcActionButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
 
-        webrtc[action](id).then((live) => {
+        webrtc[action](id, token).then((live) => {
             let content = '';
 
             if (live) {

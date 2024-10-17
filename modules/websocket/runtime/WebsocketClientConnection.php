@@ -10,13 +10,6 @@ trait WebsocketClientConnection
     protected ?Trongate_controller_action $controller_action = null;
 
     /**
-     * Lazily instantiated webrtc message handler instance
-     *
-     * @var WebRTC|null
-     */
-    protected ?WebRTC $webrtc = null;
-
-    /**
      * Accepts new client connections and initializes the client session.
      *
      * @return void
@@ -161,7 +154,6 @@ trait WebsocketClientConnection
 
         return match ($type) {
             'controller_action' => $this->controller_action()->call($json, $this->clients[$client_id]),
-            'webrtc' => $this->webrtc()->call($json, $this->clients[$client_id]),
             default => "Unsupported request type: $type",
         };
     }
@@ -174,16 +166,6 @@ trait WebsocketClientConnection
         }
 
         return $this->controller_action;   
-    }
-
-    protected function webrtc(): WebRTC
-    {
-        if (!$this->webrtc) {
-            require_once __DIR__ . '/WebRTC.php';
-            $this->webrtc = new WebRTC($this);
-        }
-
-        return $this->webrtc;
     }
 
     /**

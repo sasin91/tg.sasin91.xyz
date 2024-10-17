@@ -50,10 +50,36 @@ trait PubSubMessaging
 
     protected function subscribeToEvents(): void
     {
-        $user_status = new Fiber(function ($socket) {
-            $subscribed = fwrite($this->subscriber, "SUBSCRIBE user_status \r\n");
+        $broadcast = fn (string $channel) => fn ($message) => $this->broadcast($channel, $message);
+
+        $user_status = new Fiber($this->jsonSubscription(
+            'user_status',
+            $broadcast('user_status')
+        ));
+        $user_status->start($this->subscriber);
+        $this->fibers->enqueue($user_status);
+
+        $live_streams = new Fiber($this->jsonSubscription(
+            'live_streams',
+            $broadcast('live_streams')
+        ));
+        $live_streams->start($this->subscriber);
+        $this->fibers->enqueue($live_streams);
+    }
+
+    /**
+     * Creates a subscription to a given channel and listens for incoming JSON messages.
+     *
+     * @param string $channel The channel name to subscribe to.
+     * @param callable $on_message
+     * @return Closure A closure that handles the subscription process and listens for messages on the given channel.
+     */
+    private function jsonSubscription(string $channel, callable $on_message): Closure
+    {
+        return function ($socket) use ($on_message, $channel) {
+            $subscribed = fwrite($this->subscriber, "SUBSCRIBE $channel \r\n");
             if ($subscribed === false) {
-                error_log("Error subscribing to user_status");
+                error_log("Error subscribing to $channel");
                 return;
             }
 
@@ -65,17 +91,14 @@ trait PubSubMessaging
                 if ($available_streams !== false) {
                     $line = fread($socket, 1024);
 
-                    if (is_string($line) && preg_match('/\{.*?\}/', $line, $matches)) {
-                        $this->broadcast('user_status', $matches[0]);
+                    if (is_string($line) && preg_match('/\{.*?}/', $line, $matches)) {
+                        $on_message($matches[0]);
                     }
                 }
 
                 Fiber::suspend();
             }
-        });
-
-        $user_status->start($this->subscriber);
-        $this->fibers->enqueue($user_status);
+        };
     }
 
     protected function broadcast(string $channel, string $message): void
