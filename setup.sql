@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `live_streams` (
   `live` tinyint(1) DEFAULT NULL,
   `start_date_and_time` datetime DEFAULT NULL,
   `ingest` varchar(255) DEFAULT NULL,
-  `playlist` varchar(255) DEFAULT NULL,
+  `playlist` LONGTEXT DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
