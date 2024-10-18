@@ -7,9 +7,11 @@
     <div class="card-body">
         <?= anchor('live_streams/manage', 'View All Live Streams', array("class" => "button alt")) ?>
         <?= anchor('live_streams/create/'.$update_id, 'Update Details', array("class" => "button")) ?>
-        <span class="go-right">
+        <div class="go-right" style="display: inline-flex;">
             <?php if($live): ?>
-                <?= anchor('live_streams/stop/'.$update_id, 'Stop Live Stream', array("class" => "button")) ?>
+                <button class="button" mx-trigger="click" mx-post="live_streams/stop/<?= $update_id ?>">
+                    <?= $t('Stop live stream') ?>
+                </button>
             <?php else: ?>
                 <?= anchor('live_streams/start/'.$update_id, 'Start Live Stream', array("class" => "button danger")) ?>
             <?php endif; ?>
@@ -21,7 +23,7 @@
             );
             echo form_button('delete', 'Delete', $attr_delete);
             ?>
-        </span>
+        </div>
     </div>
 </div>
 <div class="three-col">
@@ -52,14 +54,6 @@
                 <div class="row">
                     <div>Start Date And Time</div>
                     <div><?= date('l jS F Y \a\t H:i',  strtotime($start_date_and_time)) ?></div>
-                </div>
-                <div class="row">
-                    <div>Ingest</div>
-                    <div><?= out($ingest) ?></div>
-                </div>
-                <div class="row">
-                    <div>Playlist</div>
-                    <div><?= out($playlist) ?></div>
                 </div>
             </div>
         </div>

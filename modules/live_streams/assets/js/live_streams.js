@@ -88,11 +88,8 @@ function renderLiveStreamActions(stream) {
 
 function renderJoinAction(stream) {
     const content = renderTemplate('live_stream-action-watch');
-    content.dataset.playlist = stream.playlist;
-    content.addEventListener('click', async () => {
-      
-    });
-    
+    content.href = `/live_streams/watch/${stream.id}`;
+   
     return content;
 }
 

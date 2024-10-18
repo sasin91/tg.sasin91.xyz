@@ -171,7 +171,7 @@ class Live_streams extends Trongate {
         die();
     }
 
-    public function webrtc_stop(): void {
+    public function stop(): void {
         $update_id = (int) segment(3);
         $data = $this->get_data_from_db($update_id);
 
@@ -202,7 +202,29 @@ class Live_streams extends Trongate {
 
         die();
     }
-    
+
+    public function watch(): void {
+      $update_id = (int) segment(3);
+
+      $data = $this->get_data_from_db($update_id);
+
+      if ($data === null) {
+          $this->template('error_404');
+          die();
+      }
+
+      $data['view_file'] = 'watch';
+      $data['additional_includes_top'] = [
+          'live_streams_module/css/watch.css'
+      ];
+      $data['additional_includes_btm'] = [
+        'https://cdn.jsdelivr.net/npm/hls.js@latest',
+        'live_streams_module/js/watch.js'
+      ];
+      
+      $this->template('public', $data);
+    }
+
     /**
      * Display a webpage with a form for creating or updating a record.
      */
@@ -296,6 +318,9 @@ class Live_streams extends Trongate {
         if ($data === false) {
             redirect('live_streams/manage');
         } else {
+            $this->module('localizations');
+            $t = $this->localizations->_translator(get_language());
+            $data['t'] = $t;
             $data['update_id'] = $update_id;
             $data['headline'] = 'Live Stream Information';
             $data['filezone_settings'] = $this->_init_filezone_settings();

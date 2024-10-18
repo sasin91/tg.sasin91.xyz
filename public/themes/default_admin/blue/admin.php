@@ -57,6 +57,7 @@
     </div>
     <script src="js/admin.js"></script>
     <script src="js/trongate-datetime.js"></script>
+    <script src="js/trongate-mx.js"></script>
     <?= $additional_includes_btm ?>
 </body>
 </html>

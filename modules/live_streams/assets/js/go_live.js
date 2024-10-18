@@ -85,7 +85,7 @@ const webrtc = {
     },
 
     stop: async function (id) {
-        const response = await fetch(`live_streams/webrtc_stop/${id}`, {
+        const response = await fetch(`live_streams/stop/${id}`, {
             method: 'POST'
         });
 

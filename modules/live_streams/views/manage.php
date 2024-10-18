@@ -32,8 +32,6 @@ if (count($rows)>0) { ?>
                 <th>Summary</th>
                 <th>Live</th>
                 <th>Start Date And Time</th>
-                <th>Ingest</th>
-                <th>Playlist</th>
                 <th style="width: 20px;">Action</th>            
             </tr>
         </thead>
@@ -46,8 +44,6 @@ if (count($rows)>0) { ?>
                 <td><?= out($row->summary) ?></td>
                 <td><?= out($row->live) ?></td>
                 <td><?= date('l jS F Y \a\t H:i',  strtotime($row->start_date_and_time)) ?></td>
-                <td><?= out($row->ingest) ?></td>
-                <td><?= out($row->playlist) ?></td>
                 <td><?= anchor('live_streams/show/'.$row->id, 'View', $attr) ?></td>        
             </tr>
             <?php
