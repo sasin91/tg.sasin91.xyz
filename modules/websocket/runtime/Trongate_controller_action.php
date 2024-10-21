@@ -22,7 +22,7 @@ spl_autoload_register(function ($class_name) {
  * e.g. instantiating a trongate controller which extends Trongate 
  */
 class Trongate_controller_action {
-    public function call(array $json, array $client) {
+    public function call(array $json, array $client): string {
         $module = $json['module'] ?? null;
         $controller = $json['controller'] ?? ucwords($module);
         $action = $json['action'] ?? '_on_websocket_message';

@@ -1,16 +1,15 @@
 <?php
 
-require_once __DIR__ . '/WebsocketHandshake.php';
-require_once __DIR__ . '/WebsocketFrameEncoding.php';
-require_once __DIR__ . '/WebsocketClientConnection.php';
-require_once __DIR__ . '/PubSubMessaging.php';
+require_once __DIR__ . '/Websocket_frame_encoding.php';
+require_once __DIR__ . '/Websocket_client_connection.php';
+require_once __DIR__ . '/Pub_sub_messaging.php';
+require_once __DIR__ . '/Events.php';
 
-class WebsocketServer
-{
-    use WebsocketHandshake;
-    use WebsocketFrameEncoding;
-    use WebsocketClientConnection;
-    use PubSubMessaging;
+class Websocket_server {
+    use Websocket_frame_encoding;
+    use Websocket_client_connection;
+    use Pub_sub_messaging;
+    use Events;
 
     /**
      * The server socket used for handling incoming connections.
@@ -50,8 +49,7 @@ class WebsocketServer
         private readonly int      $pingTimeout = 10,
         protected readonly string $redis_host = '127.0.0.1',
         protected readonly int    $redis_port = 6379,
-    )
-    {
+    ) {
         // Create a TCP socket
         $this->server_socket = stream_socket_server(
             "tcp://{$host}:{$port}",
@@ -67,13 +65,12 @@ class WebsocketServer
 
         $this->fibers = new SplQueue();
 
-        $this->establishPublisherConnection();
-        $this->establishSubscriberConnection();
-        $this->subscribeToEvents();
+        $this->establish_publisher_connection();
+        $this->establish_subscriber_connection();
+        $this->subscribe_to_events();
     }
 
-    public function listen(): void
-    {
+    public function listen(): void {
         $this->running = true;
 
         $timeout = $this->fibers->count() > 0 ? $this->timeout : null;
@@ -81,7 +78,7 @@ class WebsocketServer
         while ($this->running) {
             $read = [$this->server_socket];
             
-            $available_streams = $this->selectStreams(
+            $available_streams = $this->stream_select(
                 read: $read,
                 timeout: $timeout
             );
@@ -94,16 +91,15 @@ class WebsocketServer
                 return;
             }
 
-            $this->acceptClientConnection();
-            $this->dispatchFibers();
+            $this->accept_client_connection();
+            $this->flush();
 
             // prevent busy-loop
             usleep(100000); // Sleep for 100ms
         }
     }
 
-    public function selectStreams(array $read, ?array $write = null, ?array $except = null, ?int $timeout = null): int|false
-    {
+    public function stream_select(array $read, ?array $write = null, ?array $except = null, ?int $timeout = null): int|false {
         /** @var ?callable $previous */
         $previous = set_error_handler(function ($errno, $errstr) use (&$previous) {
             // suppress warnings that occur when `stream_select()` is interrupted by a signal
@@ -142,8 +138,7 @@ class WebsocketServer
      * @param string $data 
      * @return bool 
      */
-    protected function fwrite($fp, string $data): bool
-    {
+    protected function fwrite($fp, string $data): bool {
         if (is_resource($fp) === false) {
             return false;
         }
@@ -185,8 +180,7 @@ class WebsocketServer
      *
      * @return void
      */
-    private function dispatchFibers(): void
-    {
+    private function flush(): void {
         $count = $this->fibers->count();
 
         while ($count--) {

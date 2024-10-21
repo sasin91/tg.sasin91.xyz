@@ -1,6 +1,6 @@
 <?php
 
-trait WebsocketClientConnection
+trait Websocket_client_connection
 {
     /**
      * Lazily instantiated message handler instance
@@ -16,8 +16,7 @@ trait WebsocketClientConnection
      *
      * @throws Throwable if an error occurs during client acceptance or initialization
      */
-    public function acceptClientConnection(): void
-    {
+    public function accept_client_connection(): void {
         $client = @stream_socket_accept($this->server_socket, $this->timeout);
 
         if ($client) {
@@ -33,20 +32,22 @@ trait WebsocketClientConnection
             ];
 
             stream_set_blocking($client, false);
-            $this->initiateClientConnection($client, $client_id);
-            $this->listenForWebsocketFrames($client, $client_id);
-            $this->keepAlive($client_id);
+            $this->initiate_client_connection($client, $client_id);
+            $this->listen_for_websocket_frames($client, $client_id);
+            $this->keep_alive($client_id);
         }
     }
 
     /**
-     * @param $client
-     * @param int $client_id
-     * @return void
-     * @throws Throwable
+     * Initiates the client connection by reading the headers and sending the appropriate handshake
+     * 
+     * @param mixed $client 
+     * @param int $client_id 
+     * @return void 
+     * @throws FiberError 
+     * @throws Throwable 
      */
-    protected function initiateClientConnection($client, int $client_id): void
-    {
+    protected function initiate_client_connection($client, int $client_id): void {
         $fiber = new Fiber(function ($client, $client_id) {
             $header_string = '';
 
@@ -65,7 +66,7 @@ trait WebsocketClientConnection
             }
 
             if (str_contains($header_string, "Upgrade: websocket")) {
-                $this->handleWebSocketHandshake($client, $header_string);
+                $this->send_websocket_handshake($client, $header_string);
             }
 
             // parse query params
@@ -74,13 +75,9 @@ trait WebsocketClientConnection
 
             $fingerprint = $queryParams['fingerprint'];
             $token = $queryParams['trongateToken'] ?? null;
-            $userId = $queryParams['user_id'] ?? null;
+            $userId = isset($queryParams['user_id']) ? (int)$queryParams['user_id'] : null;
 
-            $this->clients[$client_id]['fingerprint'] = $fingerprint;
-            $this->clients[$client_id]['trongateToken'] = $token;
-            $this->clients[$client_id]['user_id'] = $userId;
-
-            $this->publishUserStatus($userId, 'online');
+            $this->emit_user_online($client_id, $fingerprint, $token, $userId);
 
             $unique_clients = [];
 
@@ -105,7 +102,7 @@ trait WebsocketClientConnection
         $this->fibers->enqueue($fiber);
     }
 
-    /**
+        /**
      * Listen for websocket frames from a client and process them
      *
      * @param resource $client The client socket
@@ -113,8 +110,7 @@ trait WebsocketClientConnection
      * @return void
      * @throws Throwable
      */
-    protected function listenForWebsocketFrames($client, int $client_id): void
-    {
+    protected function listen_for_websocket_frames($client, int $client_id): void {
         $fiber = new Fiber(function ($client, $client_id) {
             while (is_resource($client) && !feof($client)) {
                 $read = [$client];
@@ -123,7 +119,7 @@ trait WebsocketClientConnection
                 
                 if ($available_streams) {
                     $frame = fread($client, 1024);
-                    $decoded = $this->decodeWebSocketFrame($frame);
+                    $decoded = $this->decode_websocket_frame($frame);
 
                     if (!empty($decoded)) {
                         if (isset($decoded['type']) && $decoded['type'] === 'pong') {
@@ -133,8 +129,8 @@ trait WebsocketClientConnection
 
                         $decodedMessage = $decoded['payload'];
                         $json = @json_decode($decodedMessage, true);
-                        $response = $this->processWebSocketRequest($json ?? [], $client_id);
-                        $responseFrame = $this->encodeWebSocketFrame($response);
+                        $response = $this->process_websocket_request($json ?? [], $client_id);
+                        $responseFrame = $this->encode_websocket_frame($response);
                         $this->fwrite($client, $responseFrame);
                     }
                 }
@@ -148,8 +144,14 @@ trait WebsocketClientConnection
         $this->fibers->enqueue($fiber);
     }
 
-    protected function processWebSocketRequest(array $json, int $client_id): string
-    {
+    /**
+     * Process the incoming websocket request
+     * 
+     * @param array $json The JSON decoded request
+     * @param int $client_id The ID of the client
+     * @return string The response to the request
+     */
+    protected function process_websocket_request(array $json, int $client_id): string {
         $type = $json['type'] ?? null;
 
         return match ($type) {
@@ -158,8 +160,12 @@ trait WebsocketClientConnection
         };
     }
 
-    protected function controller_action(): Trongate_controller_action
-    {
+    /**
+     * Forward the request to the controller action
+     * 
+     * @return Trongate_controller_action 
+     */
+    protected function controller_action(): Trongate_controller_action {
         if (!$this->controller_action) {
             require_once __DIR__ . '/Trongate_controller_action.php';
             $this->controller_action = new Trongate_controller_action();
@@ -175,11 +181,10 @@ trait WebsocketClientConnection
      * @return void
      * @throws Throwable If there is an error during execution
      */
-    protected function keepAlive(int $client_id): void
-    {
+    protected function keep_alive(int $client_id): void {
         $fiber = new Fiber(function () use ($client_id) {
             // @see https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#pings_and_pongs_the_heartbeat_of_websockets
-            $pingFrame = $this->encodeWebSocketFrame('', 0x9);
+            $pingFrame = $this->encode_websocket_frame('', 0x9);
 
             while (isset($this->clients[$client_id])) {
                 $client = $this->clients[$client_id];
@@ -193,20 +198,20 @@ trait WebsocketClientConnection
                     && $ping_diff > ($this->pingTimeout / 2)
                 ) {
                     if (!is_resource($client['socket'])) {
-                        $this->userOffline($client);
+                        $this->emit_user_offline($client);
                         // Terminate fiber
                         return;
                     }
 
                     // @see https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#pings_and_pongs_the_heartbeat_of_websockets
-                    $pingFrame = $this->encodeWebSocketFrame('', 0x9);
+                    $pingFrame = $this->encode_websocket_frame('', 0x9);
                     $ping = @fwrite(
                         $client['socket'], 
                         $pingFrame
                     );
 
                     if ($ping === false) {
-                        $this->userOffline($client);
+                        $this->emit_user_offline($client);
                         // Terminate fiber
                         return;
                     }
@@ -220,13 +225,5 @@ trait WebsocketClientConnection
 
         $fiber->start();
         $this->fibers->enqueue($fiber);
-    }
-
-    protected function userOffline(array $client): void {
-        if (is_resource($client['socket'])) {
-            fclose($client['socket']);
-        }
-        unset($this->clients[(int)$client]);
-        $this->publishUserStatus($client['user_id'], 'offline');
     }
 }

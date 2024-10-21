@@ -1,7 +1,6 @@
 <?php
 
-trait PubSubMessaging
-{
+trait Pub_sub_messaging {
     /**
      * The redis socket used for publishing state across instances.
      *
@@ -16,27 +15,33 @@ trait PubSubMessaging
      */
     protected $subscriber;
 
-    protected function publishUserStatus($userId, $status): void
-    {
+    /**
+     * Notify connected clients and instances of a user's status change.
+     * 
+     * @param int $user_id 
+     * @param string $status 
+     * @return void 
+     * @throws RuntimeException 
+     */
+    protected function publish_user_status(int $user_id, string $status): void {
         $this->publish('user_status', json_encode([
-            'user_id' => $userId,
+            'user_id' => $user_id,
             'status' => $status,
         ]));
     }
 
-    protected function publishChatMessage($user, $message): void
-    {
-        $this->publish('chat_message', json_encode([
-            'user' => $user,
-            'message' => $message,
-        ]));
-    }
-
-    protected function publish(string $channel, string $message): void
-    {
+    /**
+     * Notify connected clients and instances of an event.
+     * 
+     * @param int $stream_id 
+     * @param string $status 
+     * @return void 
+     * @throws RuntimeException 
+     */
+    protected function publish(string $channel, string $message): void {
         if (!is_resource($this->publisher) || feof($this->publisher)) {
             error_log("Socket is closed. Attempting to reconnect...");
-            $this->establishPublisherConnection();
+            $this->establish_publisher_connection();
         }
 
         $published = fwrite($this->publisher, $command = "PUBLISH {$channel} '{$message}'\r\n");
@@ -48,16 +53,20 @@ trait PubSubMessaging
         }
     }
 
-    protected function subscribeToEvents(): void
-    {
-        $user_status = new Fiber($this->jsonSubscription(
+    /**
+     * Subscribe to events published through Redis.
+     *
+     * @return void
+     */
+    protected function subscribe_to_events(): void {
+        $user_status = new Fiber($this->json_subscription(
             'user_status',
             $this->broadcast(...)
         ));
         $user_status->start($this->subscriber);
         $this->fibers->enqueue($user_status);
 
-        $live_streams = new Fiber($this->jsonSubscription(
+        $live_streams = new Fiber($this->json_subscription(
             'live_streams',
             $this->broadcast(...)
         ));
@@ -71,7 +80,7 @@ trait PubSubMessaging
     * @param string $response The raw response from the Redis server.
     * @return array|false An array containing the channel and payload, or false if the response is invalid.
   **/
-  protected function parseRedisSubscribeResponse(string $response) {
+  protected function parse_redis_subscribe_response(string $response): array|false {
     $lines = explode("\r\n", $response);
     
     // Redis subscribe responses follow this structure:
@@ -103,8 +112,7 @@ trait PubSubMessaging
      * @param callable $on_message
      * @return Closure A closure that handles the subscription process and listens for messages on the given channel.
      */
-    private function jsonSubscription(string $channel, callable $on_message): Closure
-    {
+    private function json_subscription(string $channel, callable $on_message): Closure {
         return function ($socket) use ($on_message, $channel) {
             $subscribed = fwrite($this->subscriber, "SUBSCRIBE $channel \r\n");
             if ($subscribed === false) {
@@ -121,7 +129,7 @@ trait PubSubMessaging
                     $line = fread($socket, 1024);
 
                     if (is_string($line) && preg_match('/\{.*?}/', $line, $matches)) {           
-                      $parsed = $this->parseRedisSubscribeResponse($line);
+                      $parsed = $this->parse_redis_subscribe_response($line);
                     
                       if ($parsed === false) {
                         break;
@@ -140,9 +148,8 @@ trait PubSubMessaging
         };
     }
 
-    protected function broadcast(string $channel, string $message): void
-    {
-        $frame = $this->encodeWebSocketFrame(json_encode([
+    protected function broadcast(string $channel, string $message): void{
+        $frame = $this->encode_websocket_frame(json_encode([
             'channel' => $channel,
             'message' => json_decode($message)
         ]));
@@ -155,13 +162,12 @@ trait PubSubMessaging
             $written = @fwrite($client['socket'], $frame);
 
             if ($written === false) {
-                $this->userOffline($client);
+                $this->emit_user_offline($client);
             }
         }
     }
 
-    protected function establishPublisherConnection(): void
-    {
+    protected function establish_publisher_connection(): void {
         $this->publisher = stream_socket_client("tcp://{$this->redis_host}:{$this->redis_port}", $publisher_errno, $publisher_errstr);
 
         if (!$this->publisher) {
@@ -171,7 +177,7 @@ trait PubSubMessaging
         stream_set_blocking($this->publisher, false);
     }
 
-    protected function establishSubscriberConnection(): void {
+    protected function establish_subscriber_connection(): void {
         $this->subscriber = stream_socket_client("tcp://{$this->redis_host}:{$this->redis_port}", $subscriber_errno, $subscriber_errstr);
 
         if (!$this->subscriber) {
