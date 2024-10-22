@@ -41,7 +41,7 @@ class Websocket_server {
      * @var bool $running False indicates the program is not running, True indicates the program is running.
      */
     public bool $running = false;
-
+    
     public function __construct(
         string                    $host = '127.0.0.1',
         int                       $port = 8085,
@@ -64,7 +64,7 @@ class Websocket_server {
         pcntl_async_signals(true);
 
         $this->fibers = new SplQueue();
-
+        
         $this->establish_publisher_connection();
         $this->establish_subscriber_connection();
         $this->subscribe_to_events();

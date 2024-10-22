@@ -3,12 +3,13 @@
 trait Websocket_client_connection
 {
     /**
-     * Lazily instantiated message handler instance
+     * The instantiated request handlers
      * 
-     * @var null|Trongate_controller_action
+     * @var array
      */
-    protected ?Trongate_controller_action $controller_action = null;
+    protected array $handler_registry = [];
 
+    
     /**
      * Accepts new client connections and initializes the client session.
      *
@@ -152,26 +153,27 @@ trait Websocket_client_connection
      * @return string The response to the request
      */
     protected function process_websocket_request(array $json, int $client_id): string {
-        $type = $json['type'] ?? null;
-
-        return match ($type) {
-            'controller_action' => $this->controller_action()->call($json, $this->clients[$client_id]),
-            default => "Unsupported request type: $type",
-        };
-    }
-
-    /**
-     * Forward the request to the controller action
-     * 
-     * @return Trongate_controller_action 
-     */
-    protected function controller_action(): Trongate_controller_action {
-        if (!$this->controller_action) {
-            require_once __DIR__ . '/Trongate_controller_action.php';
-            $this->controller_action = new Trongate_controller_action();
+        if (isset($json['handler']) === false) {
+            return 'No handler specified';
         }
-
-        return $this->controller_action;   
+        
+        $handler_directory = __DIR__ . '/handlers/';
+        $handler = ucwords($json['handler']);
+        
+        if (file_exists($handler_directory . $handler . '.php') === false) {
+            return "Handler not found: {$handler}";
+        }
+        
+        if (isset($this->handler_registry[$handler])) {
+            $handler_instance = $this->handler_registry[$handler];
+        } else {
+            require_once $handler_directory . $handler . '.php';
+            $handler_instance = new $handler();
+            $this->handler_registry[$handler] = $handler_instance;
+        }
+        
+        $handler_method = $json['handler_method'] ?? 'handle';
+        return $handler_instance->$handler_method($json, $this->clients[$client_id]);
     }
 
     /**
