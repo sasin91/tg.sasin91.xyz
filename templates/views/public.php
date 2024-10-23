@@ -87,7 +87,7 @@
 		<ul auto-populate="true"></ul>
 	</div>
 	<script src="js/app.js"></script>
-    <script src="js/websocket.js"></script>
+    <script src="websocket_module/js/websocket.js"></script>
     <script src="js/language-selector.js"></script>
     <script src="js/trongate-mx.js"></script>
     <script>
