@@ -83,17 +83,21 @@
     </section>
 </article>
 
-<!-- Defer is important here, as the script expects websocket.js to be loaded first -->
-<script defer src="/live_streams_module/js/live_streams.js"></script>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        renderLiveStreams(
-            JSON.parse('<?= json_encode(
-                $streams,
-                JSON_UNESCAPED_SLASHES | JSON_HEX_QUOT | JSON_HEX_APOS | JSON_HEX_AMP
-            ) ?>')
-        );
+    document.addEventListener('websocket:init.done', function () {
+        var live_streams_script = document.createElement('script');
+        live_streams_script.src = '/live_streams_module/js/live_streams.js';
+        live_streams_script.type = 'text/javascript';
+
+        live_streams_script.addEventListener('load', function () {
+            renderLiveStreams(
+                JSON.parse('<?= json_encode(
+                    $streams,
+                    JSON_UNESCAPED_SLASHES | JSON_HEX_QUOT | JSON_HEX_APOS | JSON_HEX_AMP
+                ) ?>')
+            );
+        })
+        document.head.appendChild(live_streams_script);
     });
 
     // document.addEventListener('DOMContentLoaded', function() {

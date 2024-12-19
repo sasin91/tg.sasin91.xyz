@@ -159,6 +159,9 @@ class Socket {
                 handler(data, event);
             }
         };
+
+        console.log('hi');
+        document.dispatchEvent(new Event('websocket:init.done', { bubbles: true }));
     }
 
     /**

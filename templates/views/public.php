@@ -91,17 +91,19 @@
     <script src="js/language-selector.js"></script>
     <script src="js/trongate-mx.js"></script>
     <script>
-        const online_count = document.querySelectorAll('.online_count');
+        document.addEventListener('DOMContentLoaded', function () {
+            const online_count = document.querySelectorAll('.online_count');
 
-        const socket = new Socket(
-            `<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`
-        );
+            window.socket = new Socket(
+                `<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`
+            );
 
-        socket.onStateChange('num_online', ({ value }) => {
-            online_count.forEach((element) => {
-                element.innerHTML = `${value} Online`;
+            socket.onStateChange('num_online', ({ value }) => {
+                online_count.forEach((element) => {
+                    element.innerHTML = `${value} Online`;
+                });
             });
-        });
+        })
     </script>
 	<?= $additional_includes_btm ?>
 </body>
