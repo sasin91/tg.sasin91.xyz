@@ -148,7 +148,7 @@ Description=WebSocket Server
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/php /var/www/modules/websockets/runtime/server.php
+ExecStart=/usr/bin/php /var/www/modules/websocket/server.php
 Restart=always
 User=www-data
 Group=www-data
