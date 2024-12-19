@@ -4,7 +4,6 @@
  * Manages loading modules and rendering of HTML templates.
  * Also contains methods for assisting with file uploads.
  * @property-read Model $model exposes the Model class to intellisense
- * @property-read Validation $validation
  */
 class Trongate {
 

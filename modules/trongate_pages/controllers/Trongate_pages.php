@@ -177,7 +177,6 @@ class Trongate_pages extends Trongate {
         //add author usernames
         $data['rows'] = $this->add_author_usernames($data['rows']);
         $data['token'] = $token;
-        $data['user_id'] = $this->trongate_tokens->_get_user_id($token);
         $data['selected_per_page'] = $this->get_selected_per_page();
         $data['per_page_options'] = $this->per_page_options;
         $data['view_module'] = 'trongate_pages';
