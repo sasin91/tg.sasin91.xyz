@@ -16,21 +16,6 @@ trait Pub_sub_messaging {
     protected $subscriber;
 
     /**
-     * Notify connected clients and instances of a user's status change.
-     * 
-     * @param int $user_id 
-     * @param string $status 
-     * @return void 
-     * @throws RuntimeException 
-     */
-    protected function publish_user_status(int $user_id, string $status): void {
-        $this->publish('user_status', json_encode([
-            'user_id' => $user_id,
-            'status' => $status,
-        ]));
-    }
-
-    /**
      * Notify connected clients and instances of an event.
      * 
      * @param int $stream_id 
@@ -59,13 +44,6 @@ trait Pub_sub_messaging {
      * @return void
      */
     protected function subscribe_to_events(): void {
-        $user_status = new Fiber($this->json_subscription(
-            'user_status',
-            $this->broadcast(...)
-        ));
-        $user_status->start($this->subscriber);
-        $this->fibers->enqueue($user_status);
-
         $live_streams = new Fiber($this->json_subscription(
             'live_streams',
             $this->broadcast(...)

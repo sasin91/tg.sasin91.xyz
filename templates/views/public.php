@@ -108,7 +108,7 @@
                 `<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`
             );
 
-            socket.onStateChange('num_online', ({ value }) => {
+            socket.onStateChange('num_online', (value) => {
                 online_count.forEach((element) => {
                     element.innerHTML = `${value} Online`;
                 });

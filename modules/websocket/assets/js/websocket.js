@@ -69,9 +69,7 @@ class Socket {
     };
     connected = false;
     instance = null;
-    state = {
-        num_online: 0,
-    };
+    state = undefined;
     flags = {
         reconnect_on_close: true
     }
@@ -86,6 +84,32 @@ class Socket {
 
             this.init();
         });
+
+        const self = this;
+
+        const state = {
+            num_online: 0,
+        }
+
+        this.state = new Proxy({ value: state }, {
+            set(target, key, value) {
+                const original = target[key];
+                const changes = Object.keys(value).filter(prop => original[prop] !== value[prop]);
+
+                const ret = Reflect.set(...arguments);
+
+                for (const handler of self.#callbacks.state_change) {
+                    handler({ changes, original, value }, target);
+                }
+
+                return ret;
+            },
+
+            get() {
+                return Reflect.get(...arguments);
+            }
+        });
+
     }
 
     reconnect() {
@@ -126,33 +150,8 @@ class Socket {
 
             switch(data.channel) {
                 case 'state':
-                    const self = this;
-                    this.state = new Proxy(data.message, {
-                        set(target, key, value) {
-                            const original = target[key];
-
-                            const ret = Reflect.set(...arguments);
-
-                            for (const handler of self.#callbacks.state_change) {
-                                handler({ key, original, value }, target);
-                            }
-
-                            return ret;
-                        },
-
-                        get() {
-                            return Reflect.get(...arguments);
-                        }
-                    });
-                    break;
-
-                case 'user_status':
-                    if (data.message.status === 'online') {
-                        this.state.num_online++;
-                    } else {
-                        this.state.num_online--;
-                    }
-                    break;
+                    this.state.value = data.message;
+                break;
             }
 
             for (const handler of this.#callbacks.onmessage) {
@@ -186,8 +185,8 @@ class Socket {
             this.addEventListener('state_change', key);
         } else {
             this.addEventListener('state_change', (state) => {
-                if (state.key === key) {
-                    callback(state);
+                if (state.changes.includes(key)) {
+                    callback(state.value[key]);
                 }
             })
         }

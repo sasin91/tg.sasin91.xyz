@@ -15,7 +15,7 @@ trait Events {
         $this->clients[$client_id]['trongateToken'] = $token;
         $this->clients[$client_id]['user_id'] = $user_id;
 
-        $this->publish_user_status($user_id, 'online');
+        $this->broadcast_num_online();
     }
 
     /**
@@ -28,7 +28,30 @@ trait Events {
         if (is_resource($client['socket'])) {
             fclose($client['socket']);
         }
-        unset($this->clients[(int)$client]);
-        $this->publish_user_status($client['user_id'], 'offline');
+        unset($this->clients[(int)$client['socket']]);
+
+        $this->broadcast_num_online();
+    }
+
+    /**
+     * Broadcast the total number of unique clients on the site
+     * 
+     * @return void
+     */
+    protected function broadcast_num_online(): void {
+        $unique_clients = [];
+
+        foreach($this->clients as $client) {
+            if (isset($unique_clients[$client['fingerprint']])) {
+                continue;
+            }
+
+            $unique_clients[$client['fingerprint']] = $client;
+        }
+
+        $this->broadcast('state', json_encode([
+            'num_clients' => count($this->clients),
+            'num_online' => count($unique_clients)
+        ]));
     }
 }

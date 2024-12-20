@@ -80,20 +80,6 @@ trait Websocket_client_connection
 
             $this->emit_user_online($client_id, $fingerprint, $token, $userId);
 
-            $unique_clients = [];
-
-            foreach($this->clients as $client) {
-                if (isset($unique_clients[$client['fingerprint']])) {
-                    continue;
-                }
-
-                $unique_clients[$client['fingerprint']] = $client;
-            }
-
-            $this->broadcast('state', json_encode([
-                'num_online' => max(0, count($unique_clients) - 1) // subtract our own connection
-            ]));
-
             // Client initiated,
             // terminate fiber
             return;
