@@ -160,7 +160,6 @@ class Socket {
             }
         };
 
-        console.log('hi');
         document.dispatchEvent(new Event('websocket:init.done', { bubbles: true }));
     }
 
