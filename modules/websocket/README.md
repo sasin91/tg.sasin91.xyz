@@ -99,6 +99,43 @@ class Chat extends Trongate {
 }
 ```
 
+### That's awesome, but how do i trigger something from the server?
+This is a little bit cumbersome, but let me outline the steps for you with some psuedo-code:
+
+## 1. Load the WebSocket Module in Your Controller
+```php
+$this->module('websocket');
+```
+## 2. Publish a Message as JSON
+```php
+$this->websocket->_publish('live_streams', json_encode([
+    'status' => 'new',
+    'id' => $update_id,
+]));
+```
+## 3. Subscribe to the Event in the WebSocket Runtime
+Add a listener and broadcaster in the `websocket/runtime/Pub_sub_messaging.php` file starting on line 46 (`protected function subscribe_to_events(): void;` method)
+```php
+$live_streams = new Fiber($this->json_subscription(
+    'live_streams',
+    $this->broadcast(...)
+));
+$live_streams->start($this->subscriber);
+$this->fibers->enqueue($live_streams);
+```
+## 4. Listen for Events in JavaScript
+Handle incoming events dynamically:
+```php
+const liveStreamEventHandler = new LiveStreamEventHandler();
+
+// Listen for the 'live_streams' event
+socket.onMessage('live_streams', (event) => {
+    liveStreamEventHandler.handle(event);
+});
+```
+
+Swap `'live_streams'` for your event name
+
 ## Deployment
 
 ### Nginx
