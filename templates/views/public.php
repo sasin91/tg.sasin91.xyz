@@ -32,10 +32,18 @@
 				<div>
             <ul id="top-nav">
               <li>
-                <?= anchor('live_streams', '<i class="fa fa-camera-o"></i> Streams') ?>
+                <?= anchor('live_streams', '<i class="fa fa-camera-o"></i> Streams', [
+                    'mx-get' => BASE_URL . 'live_streams', 
+                    'mx-target' => 'body', 
+                    'mx-push-url' => 'true'
+                ]) ?>
               </li>
               <li>
-                <?= anchor('blog', '<i class="fa fa-newspaper-o"></i> Blog') ?>
+                <?= anchor('blog', '<i class="fa fa-newspaper-o"></i> Blog', [
+                    'mx-get' => BASE_URL . 'blog', 
+                    'mx-target' => 'body', 
+                    'mx-push-url' => 'true'
+                ]) ?>
               </li>
               <li>
                 <language-selector />
