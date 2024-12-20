@@ -52,13 +52,16 @@ e.g. in `templates/views/public.php`
             `<?= WEBSOCKET_URL ?>?trongateToken=<?= $token ?? '' ?>&user_id=<?= $user_id ?? null ?>`
         );
 
-        socket.onStateChange('num_online', ({ value }) => {
+        socket.onStateChange('num_online', (value) => {
             online_count.forEach((element) => {
                 element.innerHTML = `${value} Online`;
             });
         });
     </script>
 ```
+> In addition to the number of unique clients (num_online), you may also listen for `num_clients` which shows the number of established connections.
+> e.g. if a user connects to the website on multiple tabs in the same browser, then the `num_online` would remain the same, but the `num_clients` would increase.
+
 When the app is deployed, the communication should happen through a reverse proxy like Nginx
 
 You may want to reproduce this locally.
