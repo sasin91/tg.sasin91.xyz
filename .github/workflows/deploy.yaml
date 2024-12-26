@@ -1,9 +1,9 @@
 name: Deploy to tg.sasin91.xyz
 on:
-  release:
-    types:
-      - published
-
+  push:
+    branches:
+      - main
+      
 jobs:
   app:
     name: 🚀 Deploy app
