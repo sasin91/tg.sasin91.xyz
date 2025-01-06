@@ -4,20 +4,20 @@ services:
       context: ./
       dockerfile: Dockerfile
       target: fpm
-    container_name: trongate-php-fpm
+    container_name: sasin91-php-fpm
     volumes:
       - ./:/var/www/html
     environment:
       - PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
       - PHP_OPCACHE_MEMORY_CONSUMPTION=128
-      - DATABASE_HOST=trongate-database
-      - DATABASE_USER=trongate
+      - DATABASE_HOST=sasin91-database
+      - DATABASE_USER=sasin91
       - DATABASE_PASSWORD=password
-      - DATABASE_NAME=trongate
+      - DATABASE_NAME=sasin91
       - WEBSOCKET_URL=ws://localhost:8080/ws
       - BASE_URL=http://localhost:8080/
     networks:
-      - trongate-network
+      - sasin91-network
     configs:
       - source: php-fpm-config
         target: /usr/local/etc/php-fpm.d/www.conf
@@ -28,7 +28,7 @@ services:
       context: ./
       dockerfile: Dockerfile
       target: websocket
-    container_name: trongate-websocket
+    container_name: sasin91-websocket
     ports:
       - "8085:8085"
     volumes:
@@ -47,11 +47,11 @@ services:
       - source: php-config
         target: /usr/local/etc/php/conf.d/php.ini
     networks:
-      - trongate-network
+      - sasin91-network
 
   nginx:
     image: nginx:latest
-    container_name: trongate-nginx
+    container_name: sasin91-nginx
     ports:
       - "8080:80"
     volumes:
@@ -59,40 +59,40 @@ services:
     depends_on:
       - php
     networks:
-      - trongate-network
+      - sasin91-network
     configs:
       - source: nginx-config
         target: /etc/nginx/conf.d/app.conf
 
   database:
     image: mariadb:latest
-    container_name: trongate-database
+    container_name: sasin91-database
     environment:
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: trongate
-      MYSQL_USER: trongate
+      MYSQL_DATABASE: sasin91
+      MYSQL_USER: sasin91
       MYSQL_PASSWORD: password
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./setup.sql:/docker-entrypoint-initdb.d/setup.sql
     networks:
-      - trongate-network
+      - sasin91-network
 
   redis:
     image: redis:latest
-    container_name: trongate-redis
+    container_name: sasin91-redis
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
     networks:
-      - trongate-network
+      - sasin91-network
 
 volumes:
   mariadb_data:
   redis_data:
 
 networks:
-  trongate-network:
+  sasin91-network:
 
 configs:
   php-config:
