@@ -2,11 +2,11 @@
 
 class Websocket extends Trongate
 {
-    private ?Redis $redis = null;
+    private ?Redis_connection $redis = null;
 
-    public function _redis(): Redis {
+    public function _redis(): Redis_connection {
         if ($this->redis == null) {
-            $this->redis = new Redis();
+            $this->redis = new Redis_connection();
             $this->redis->connect(
                 REDIS_HOST,
                 REDIS_PORT
@@ -27,6 +27,6 @@ class Websocket extends Trongate
     */
 
     public function _publish(string $channel, string $message): void {
-        $this->_redis()->publish($channel, $message);
+        $this->_redis()->write("PUBLISH {$channel} '{$message}'\r\n");
     }
 }
