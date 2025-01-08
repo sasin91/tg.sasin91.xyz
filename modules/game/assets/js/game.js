@@ -20,8 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
     playersRequest.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     playersRequest.setRequestHeader('TrongateToken', trongateToken);
     playersRequest.addEventListener('load', (data) => {
-        console.log(data);
-        players = JSON.parse(data);
+        players = JSON.parse(playersRequest.responseText);
     })
     playersRequest.send();
 
@@ -95,8 +94,8 @@ document.addEventListener('DOMContentLoaded', function () {
     stats.domElement.style.top = '0px';
     container.appendChild(stats.domElement);
 
-    socket.onMessage(`game:${server}`, ({ event, player, payload }) => {
-        switch(event) {
+    socket.onMessage(`game:${server}`, ({event, player, payload}) => {
+        switch (event) {
             case 'player:online':
                 console.log(player, 'online');
 
@@ -116,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 scene.remove(_player.group);
 
                 delete players[playerIndex];
+                break;
             default:
                 console.log({
                     event,
@@ -796,12 +796,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function ping() {
         const pingRequest = new XMLHttpRequest();
-        pingRequest.open('POST', '/ping', true);
+        pingRequest.open('POST', '/game/ping', true);
         pingRequest.setRequestHeader('Content-Type', 'application/json');
         pingRequest.setRequestHeader('Accept', 'application/json');
         pingRequest.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         pingRequest.setRequestHeader('TrongateToken', trongateToken);
-        pingRequest.send(JSON.stringify({time: Date.now()}));
+        pingRequest.send(JSON.stringify({
+            time: Date.now(),
+            player_id: player.id
+        }));
     }
 
     setInterval(() => {

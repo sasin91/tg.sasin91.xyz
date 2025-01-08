@@ -109,7 +109,7 @@
 
 /* Icons */
 .health-icon {
-  background-image: url(game_module/ui/flash_on_FILL0_wght700_GRAD0_opsz48.svg);
+  background-image: url(/game_module/ui/flash_on_FILL0_wght700_GRAD0_opsz48.svg);
   background-size: contain;
   height: 1.5rem;
   width: 1.5rem;
@@ -118,7 +118,7 @@
 }
 
 .mana-icon {
-  background-image: url(game_module/ui/add_box_FILL0_wght700_GRAD0_opsz48.svg);
+  background-image: url(/game_module/ui/add_box_FILL0_wght700_GRAD0_opsz48.svg);
   background-size: contain;
   height: 1.5rem;
   width: 1.5rem;
@@ -127,7 +127,7 @@
 }
 
 .currency-icon {
-  background-image: url(game_module/ui/currency_yuan_FILL0_wght700_GRAD0_opsz48.svg);
+  background-image: url(/game_module/ui/currency_yuan_FILL0_wght700_GRAD0_opsz48.svg);
   background-size: cover;
   background-repeat: no-repeat;
   height: 1.5rem;
@@ -138,7 +138,7 @@
 }
 
 .safety-icon {
-  background-image: url(game_module/ui/safety_check_FILL0_wght700_GRAD0_opsz48.svg);
+  background-image: url(/game_module/ui/safety_check_FILL0_wght700_GRAD0_opsz48.svg);
   background-size: contain;
   height: 2rem;
   width: 2rem;
@@ -147,7 +147,7 @@
 }
 
 .paintball-icon {
-  background-image: url(game_module/ui/paintball.png);
+  background-image: url(/game_module/ui/paintball.png);
   background-repeat: no-repeat;
   background-size: contain;
   width: 7rem;
@@ -164,6 +164,7 @@
   border-radius: 0.5rem;
   right: 7rem;
   bottom: 16rem;
+  top: 1rem;
   background-color: transparent;
 }
 
@@ -233,7 +234,7 @@
 .top-right-panel {
   position: absolute;
   right: 7rem;
-  top: 3rem;
+  top: 7rem;
   width: 24rem;
   height: 7rem;
   padding: 0.625rem;

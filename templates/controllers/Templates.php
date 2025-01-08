@@ -18,6 +18,10 @@ class Templates extends Trongate {
         load('public', $data);
     }
 
+    function game($data): void {
+        load('game', $data);
+    }
+
     /**
      * Loads the 'error_404' view with provided data.
      *
