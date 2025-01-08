@@ -117,14 +117,12 @@ class Core {
                     $asset_path = $this->sanitize_file_path($asset_path, '../modules/');
                     
                     if (file_exists($asset_path)) {
-                        $content_type = mime_content_type($asset_path);
-
-                        if ($content_type === 'text/plain' || $content_type === 'text/html') {
-                            if (strpos($file_name, '.css') !== false) {
-                                $content_type = 'text/css';
-                            } elseif (strpos($file_name, '.js') !== false) {
-                                $content_type = 'text/javascript';
-                            }
+                        if (strpos($file_name, '.css') !== false) {
+                            $content_type = 'text/css';
+                        } elseif (strpos($file_name, '.js') !== false) {
+                            $content_type = 'text/javascript';
+                        } else {
+                            $content_type = mime_content_type($asset_path);
                         }
 
                         if ($content_type === 'image/svg') {
