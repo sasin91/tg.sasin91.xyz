@@ -94,28 +94,71 @@ document.addEventListener('DOMContentLoaded', function () {
     stats.domElement.style.top = '0px';
     container.appendChild(stats.domElement);
 
-    socket.onMessage(`game:${server}`, ({event, player, payload}) => {
-        switch (event) {
+    socket.onMessage(`game:${server}`, (message) => {
+        const _player = message.player;
+        const _event = message.event;
+        const _payload = message.payload;
+
+        let _p, _pIdx;
+
+        switch (_event) {
             case 'player:online':
-                console.log(player, 'online');
+                console.log(_player, 'online');
 
-                players.push(player);
+                _player.group = new THREE.Group();
+                _player.group.add(playerModel);
 
-                player.group = new THREE.Group();
-                player.group.copy(playerGroup);
-
-                scene.add(player.group);
+                scene.add(_player.group);
+                players.push(_player);
                 break;
             case 'player:offline':
-                console.log(player, 'offline');
+                console.log(_player, 'offline');
+                console.log(players, _player);
 
-                const playerIndex = players.findIndex((p) => p === player);
+                _pIdx = players.findIndex((p) => p.id === _player.id);
 
-                const _player = players[playerIndex];
-                scene.remove(_player.group);
+                _p = players[_pIdx];
+                scene.remove(_p.group);
 
-                delete players[playerIndex];
+                delete players[_pIdx];
                 break;
+
+            case 'player:cast':
+                /**
+                 *                 impulse,
+                 *                 sphere: {
+                 *                     collider: sphere.collider,
+                 *                     velocity: sphere.velocity
+                 *                 }
+                 */
+                _p = players.find((p) => p.id === _player.id);
+
+                const _sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                _sphere.castShadow = true;
+                _sphere.receiveShadow = true;
+                _sphere.impulse = _payload.sphere.impulse;
+                _sphere.velocity = _payload;
+
+                scene.add(sphere);
+
+                spheres.push({
+                    mesh: _sphere,
+                    collider: new THREE.Sphere(new THREE.Vector3(0, -100, 0), SPHERE_RADIUS),
+                    velocity: new THREE.Vector3()
+                });
+
+                _p.model.position.copy(sphere.collider.center);
+
+                break;
+
+            case 'player:move':
+                _p = players.find((p) => p.id === _player.id);
+
+                _p.x = _payload.x;
+                _p.y = _payload.y;
+                _p.z = _payload.z;
+                break;
+                
             default:
                 console.log({
                     event,
@@ -211,6 +254,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
         animate();
+
+        socket.send(JSON.stringify({
+            channel: 'game',
+            server,
+            event: 'player:spawn',
+            payload: player
+        }));
     });
 
     const keyStates = {};
@@ -318,12 +368,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         for (const p of players) {
-            // TODO: figure out how to use the Xbot model instead of a boxDoodad
-            // p.group = new THREE.Group();
-            // p.group.copy(playerGroup, false);
-            // p.group.position.set(p.x, p.y, p.z);
-
-            // scene.add(p.group);
+            if (p.id === player.id) continue;
 
             const boxDoodad = new THREE.Mesh(
                 new THREE.BoxGeometry(1, 1, 1),
@@ -332,6 +377,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             boxDoodad.position.set(p.x, p.y, p.z);
             scene.add(boxDoodad);
+
+            p.model = boxDoodad;
         }
     });
 
@@ -378,7 +425,9 @@ document.addEventListener('DOMContentLoaded', function () {
         return new THREE.Mesh(skyGeo, skyMat);
     };
 
-    loadBackgroundNightSky().then((sky) => scene.add(sky));
+    loadBackgroundNightSky().then((sky) => {
+        scene.add(sky);
+    });
 
     const vector1 = new THREE.Vector3();
     const vector2 = new THREE.Vector3();
@@ -442,21 +491,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const impulse = 15 + 30 * (1 - Math.exp((mouseTime - performance.now()) * 0.001));
 
-        socket.send(JSON.stringify({
-            channel: 'game',
-            server,
-            event: 'player:cast',
-            payload: {
-                impulse,
-                sphereIdx
-            }
-        }));
-
         sphere.velocity.copy(playerDirection).multiplyScalar(impulse);
         sphere.velocity.addScaledVector(playerVelocity, 2);
 
         sphereIdx = (sphereIdx + 1) % spheres.length;
 
+        socket.send(JSON.stringify({
+            channel: 'game',
+            server,
+            event: 'player:cast',
+            payload: {
+                id: player.id,
+                impulse,
+                sphere: {
+                    collider: sphere.collider,
+                    velocity: sphere.velocity
+                }
+            }
+        }));
     }
 
     function playerCollisions() {
@@ -692,6 +744,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 server,
                 event: 'player:move',
                 payload: {
+                    id: player.id,
                     x: vector.x,
                     y: vector.y,
                     z: vector.z

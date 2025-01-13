@@ -60,6 +60,7 @@ final class Client implements ArrayAccess
         }
 
         $this->runtime->messenger->broadcast_num_online();
+        $this->runtime->messenger->broadcast_offline($this);
     }
 
     public function initialization_fiber(): Fiber {
@@ -142,12 +143,28 @@ final class Client implements ArrayAccess
                         $decodedMessage = $frame->payload;
                         $json = @json_decode($decodedMessage, true);
 
-                        if (is_array($json) && isset($json['handler'])) {
-                            require_once __DIR__ . '/interop/Invoker.php';
-                            $invoke = new Invoker();
-                            $result = $invoke($json);
+                        if (is_array($json)) {
+                            switch(true) {
+                                case isset($json['handler']):
+                                    require_once __DIR__ . '/interop/Invoker.php';
+                                    $invoke = new Invoker();
+                                    $result = $invoke($json);
 
-                            $this->reply($result->frame());
+                                    $this->reply($result->frame());
+                                    break;
+
+                                case isset($json['channel']):
+                                    $response = $this->runtime->messenger->send(
+                                        $json['channel'],
+                                        $json,
+                                        $this
+                                    );
+
+                                    if ($response !== null) {
+                                        $this->reply($response);
+                                    }
+                                    break;
+                            }
                         }
                     }
                 }

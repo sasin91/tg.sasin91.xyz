@@ -30,6 +30,10 @@ abstract class Channel
         return $this->_name = basename($class_name);
     }
 
+    public abstract function on_message(Client $client, array $message): ?string;
+
+    public abstract function on_offline(Client $client): void;
+
     public function publish(array $payload)
     {
         $this->messenger->publish(

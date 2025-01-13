@@ -37,6 +37,18 @@ class Messenger
         }
     }
 
+    public function send(string $channel, array $json, CLient $client): ?string {
+        $channel_instance = $this->channels[$channel];
+
+        return $channel_instance->on_message($client, $json);
+    }
+
+    public function broadcast_offline(Client $client): void {
+        foreach ($this->channels as $channel) {
+            $channel->on_offline($client);
+        }
+    }
+
     public function broadcast(string $channel, string $message): void {
         $frame = Frame::encode(
             message: json_encode([

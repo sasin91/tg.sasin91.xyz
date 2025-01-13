@@ -9,12 +9,19 @@ class Game extends Trongate {
 
         $data['token'] = $this->trongate_tokens->_attempt_get_valid_token();
 
+        if (!isset($_SESSION['player_id'])) {
+            $_SESSION['player_id'] = uniqid();
+        }
+
         $data['player'] = (object)[
-            'id' => 1,
+            'id' => $_SESSION['player_id'],
             'health' => 100,
             'mana' => 100,
             'name' => 'Player',
-            'latency' => 42
+            'latency' => 42,
+            'x' => 0,
+            'y' => 0,
+            'z' => 0,
         ];
 
         $data['view_module'] = 'game';

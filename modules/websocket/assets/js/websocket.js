@@ -128,6 +128,8 @@ class Socket {
         };
 
         this.instance.onclose = (event) => {
+            console.trace();
+            console.log(event);
             this.connected = false;
 
             if (this.flags.reconnect_on_close) {
