@@ -1,9 +1,10 @@
-FROM php:8.3-cli
+FROM php:8.4-cli
 
 RUN apt-get update && apt-get install -y \
     supervisor \
+    libsodium-dev \
     && apt-get clean \
-    && docker-php-ext-install pcntl
+    && docker-php-ext-install pcntl sodium
 
 COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
 
