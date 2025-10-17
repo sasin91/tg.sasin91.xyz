@@ -63,7 +63,10 @@ class Runtime {
             $this->flush();
 
             // prevent busy-loop
-            usleep(100000); // Sleep for 100ms
+            // Only sleep if no active fibers
+            if ($this->fibers->count() === 0) {
+              usleep(100000); // Sleep for 100ms
+            }
         }
     }
 
