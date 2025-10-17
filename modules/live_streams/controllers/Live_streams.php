@@ -4,6 +4,7 @@
  * @property-read Localizations $localizations
  * @property-read Websocket $websocket
  * @property-read Trongate_security $trongate_security
+ * @property-read Mux_api $mux_api
  */
 class Live_streams extends Trongate {
     const PICTURES_DIR = __DIR__.'/../assets/live_streams_pictures/';
@@ -75,7 +76,18 @@ class Live_streams extends Trongate {
           if ($validated === true) {
             $data['start_date_and_time'] = str_replace(' at ', '', $data['start_date_and_time']);
             $data['start_date_and_time'] = date('Y-m-d H:i', strtotime($data['start_date_and_time']));
-            $data['live'] = $data['live'] !== '';        
+            $data['live'] = $data['live'] !== '';
+
+            // Create Mux live stream
+            $mux_response = $this->_create_mux_live_stream();
+
+            if ($mux_response['success']) {
+              $mux_data = $mux_response['data']['data'];
+              $data['mux_stream_id'] = $mux_data['id'];
+              $data['mux_stream_key'] = $mux_data['stream_key'];
+              $data['mux_playback_id'] = $mux_data['playback_ids'][0]['id'];
+            }
+
             $update_id = $this->model->insert($data, 'live_streams');
             set_flashdata($t('Live stream created.'));
           
@@ -124,21 +136,12 @@ class Live_streams extends Trongate {
         $this->template('public', $data);
     }
 
-    public function webrtc_start(): void {
+    public function mux_start(): void {
         $this->module('trongate_security');
         $this->trongate_security->_make_sure_allowed();
 
         $this->module('localizations');
         $t = $this->localizations->_translator(get_language());
-
-        $sdp = post('sdp', true);
-        if (empty($sdp)) {
-            http_send_status(403);
-            echo json_encode([
-                'message' => $t('SDP is required.')
-            ]);
-            return;
-        }
 
         $update_id = (int) segment(3);
         $data = $this->get_data_from_db($update_id);
@@ -152,21 +155,27 @@ class Live_streams extends Trongate {
         if ($data['live'] === 1) {
             http_response_code(403);
             echo json_encode(['message' => $t('Live stream is already live.')]);
-        } else {
-            http_response_code(200);
-            echo json_encode(['message' => $t('Live stream started.')]);
-
-            $this->model->update($update_id, [
-                'live' => 1,
-                'playlist' => base64_encode(json_encode($sdp))
-            ]);
-
-            $this->module('websocket');
-            $this->websocket->_publish('live_streams', json_encode([
-                'status' => 'live',
-                'id' => $update_id,
-            ]));
+            return;
         }
+
+        // Mark stream as live (Mux handles the actual streaming via RTMP)
+        $this->model->update($update_id, [
+            'live' => 1
+        ]);
+
+        $this->module('websocket');
+        $this->websocket->_publish('live_streams', json_encode([
+            'status' => 'live',
+            'id' => $update_id,
+        ]));
+
+        http_response_code(200);
+        echo json_encode([
+            'message' => $t('Live stream started.'),
+            'stream_key' => $data['mux_stream_key'],
+            'rtmp_url' => 'rtmp://global-live.mux.com:5222/live',
+            'playback_url' => "https://stream.mux.com/{$data['mux_playback_id']}.m3u8"
+        ]);
 
         die();
     }
@@ -182,12 +191,13 @@ class Live_streams extends Trongate {
         $t = $this->localizations->_translator(get_language());
 
         if ($data['live'] === 1) {
-            http_response_code(200);
-            echo json_encode(['message' => $t('Live stream ended.')]);
+            // Complete the Mux live stream
+            if (!empty($data['mux_stream_id'])) {
+                $this->_complete_mux_live_stream($data['mux_stream_id']);
+            }
 
             $this->model->update($update_id, [
-                'live' => 0,
-                'playlist' => null
+                'live' => 0
             ]);
 
             $this->module('websocket');
@@ -195,12 +205,95 @@ class Live_streams extends Trongate {
                 'status' => 'offline',
                 'id' => $update_id,
             ]));
+
+            http_response_code(200);
+            echo json_encode(['message' => $t('Live stream ended.')]);
         } else {
             http_response_code(403);
             echo json_encode(['message' => $t('Live stream has not started.')]);
         }
 
         die();
+    }
+
+    /**
+     * Handle Mux webhook events
+     */
+    public function mux_webhook(): void {
+        $payload = file_get_contents('php://input');
+        $event = json_decode($payload, true);
+
+        if (!$event || !isset($event['type'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid webhook payload']);
+            return;
+        }
+
+        // Handle different Mux event types
+        switch ($event['type']) {
+            case 'video.live_stream.active':
+                $this->_handle_stream_active($event['data']);
+                break;
+            case 'video.live_stream.idle':
+                $this->_handle_stream_idle($event['data']);
+                break;
+            case 'video.live_stream.disconnected':
+                $this->_handle_stream_disconnected($event['data']);
+                break;
+        }
+
+        http_response_code(200);
+        echo json_encode(['status' => 'ok']);
+        die();
+    }
+
+    private function _handle_stream_active(array $stream_data): void {
+        $mux_stream_id = $stream_data['id'];
+
+        // Find the live stream by Mux ID
+        $stream = $this->model->get_one_where('mux_stream_id', $mux_stream_id, 'live_streams');
+
+        if ($stream) {
+            $this->model->update($stream->id, ['live' => 1]);
+
+            $this->module('websocket');
+            $this->websocket->_publish('live_streams', json_encode([
+                'status' => 'live',
+                'id' => $stream->id,
+            ]));
+        }
+    }
+
+    private function _handle_stream_idle(array $stream_data): void {
+        $mux_stream_id = $stream_data['id'];
+
+        $stream = $this->model->get_one_where('mux_stream_id', $mux_stream_id, 'live_streams');
+
+        if ($stream) {
+            $this->model->update($stream->id, ['live' => 0]);
+
+            $this->module('websocket');
+            $this->websocket->_publish('live_streams', json_encode([
+                'status' => 'offline',
+                'id' => $stream->id,
+            ]));
+        }
+    }
+
+    private function _handle_stream_disconnected(array $stream_data): void {
+        $mux_stream_id = $stream_data['id'];
+
+        $stream = $this->model->get_one_where('mux_stream_id', $mux_stream_id, 'live_streams');
+
+        if ($stream) {
+            $this->model->update($stream->id, ['live' => 0]);
+
+            $this->module('websocket');
+            $this->websocket->_publish('live_streams', json_encode([
+                'status' => 'disconnected',
+                'id' => $stream->id,
+            ]));
+        }
     }
 
     public function watch(): void {
@@ -540,8 +633,9 @@ class Live_streams extends Trongate {
         $data['summary'] = post('summary', true);
         $data['live'] = post('live', true);
         $data['start_date_and_time'] = post('start_date_and_time', true);
-        $data['ingest'] = post('ingest', true);
-        $data['playlist'] = post('playlist', true);        
+        $data['mux_stream_id'] = post('mux_stream_id', true);
+        $data['mux_stream_key'] = post('mux_stream_key', true);
+        $data['mux_playback_id'] = post('mux_playback_id', true);
         return $data;
     }
 
@@ -587,5 +681,98 @@ class Live_streams extends Trongate {
       }
     
       return $stream;
+    }
+
+    /**
+     * Create a new Mux live stream
+     *
+     * @return array API response
+     */
+    private function _create_mux_live_stream(): array {
+        $payload = [
+            'playback_policies' => ['public'],
+            'new_asset_settings' => [
+                'playback_policies' => ['public']
+            ]
+        ];
+
+        return $this->_mux_request('POST', '/live-streams', $payload);
+    }
+
+    /**
+     * Complete a Mux live stream
+     *
+     * @param string $stream_id
+     * @return array API response
+     */
+    private function _complete_mux_live_stream(string $stream_id): array {
+        return $this->_mux_request('PUT', "/live-streams/{$stream_id}/complete");
+    }
+
+    /**
+     * Make HTTP request to Mux API
+     *
+     * @param string $method HTTP method
+     * @param string $endpoint API endpoint
+     * @param array $data Request payload
+     * @return array API response
+     */
+    private function _mux_request(string $method, string $endpoint, array $data = []): array {
+        $url = 'https://api.mux.com/video/v1' . $endpoint;
+
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Basic ' . base64_encode(MUX_TOKEN_ID . ':' . MUX_TOKEN_SECRET)
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+        switch (strtoupper($method)) {
+            case 'POST':
+                curl_setopt($ch, CURLOPT_POST, true);
+                if (!empty($data)) {
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+                }
+                break;
+            case 'PUT':
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+                if (!empty($data)) {
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+                }
+                break;
+            case 'DELETE':
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+                break;
+            case 'GET':
+            default:
+                // GET is default
+                break;
+        }
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            return [
+                'success' => false,
+                'error' => 'cURL Error: ' . $error,
+                'http_code' => 0
+            ];
+        }
+
+        $decoded_response = json_decode($response, true);
+
+        return [
+            'success' => $http_code >= 200 && $http_code < 300,
+            'data' => $decoded_response,
+            'http_code' => $http_code,
+            'raw_response' => $response
+        ];
     }
 }
