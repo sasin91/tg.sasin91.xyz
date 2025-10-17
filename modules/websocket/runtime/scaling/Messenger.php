@@ -80,7 +80,7 @@ class Messenger
      * @throws RuntimeException 
      */
     public function publish(string $channel, string $message): void {
-        $this->get_publisher()->write("PUBLISH {$channel} '{$message}'\r\n");
+        $this->get_publisher()->publish($channel, $message);
     }
 
     /**

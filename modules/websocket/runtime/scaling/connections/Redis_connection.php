@@ -51,4 +51,24 @@ class Redis_connection
 
         return $published;
     }
+
+    /**
+     * Publish a message to a Redis channel
+     *
+     * @param string $channel The Redis channel name
+     * @param string $message The message to publish
+     * @return int The number of bytes written
+     */
+    public function publish(string $channel, string $message): int {
+        // Format Redis PUBLISH command: PUBLISH channel message
+        $command = sprintf(
+            "*3\r\n$7\r\nPUBLISH\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n",
+            strlen($channel),
+            $channel,
+            strlen($message),
+            $message
+        );
+
+        return $this->write($command);
+    }
 }

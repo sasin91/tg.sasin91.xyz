@@ -62,7 +62,13 @@ abstract class Channel
     public function json_subscription(string $channel, callable $on_message): Closure
     {
         return function ($socket) use ($on_message, $channel) {
-            $subscribed = $this->messenger->get_subscriber()->write("SUBSCRIBE $channel \r\n");
+            // Use Redis RESP protocol for SUBSCRIBE command
+            $subscribe_command = sprintf(
+                "*2\r\n$9\r\nSUBSCRIBE\r\n$%d\r\n%s\r\n",
+                strlen($channel),
+                $channel
+            );
+            $subscribed = $this->messenger->get_subscriber()->write($subscribe_command);
             if ($subscribed === false) {
                 error_log("Error subscribing to $channel");
                 return;
