@@ -18,8 +18,8 @@ services:
       - REDIS_PORT=6379
       - WEBSOCKET_URL=ws://localhost:8080/ws
       - BASE_URL=http://localhost:8080/
-      - MUX_TOKEN_ID=ecc55474-d61e-43da-a8bb-ade6e783d720
-      - MUX_TOKEN_SECRET=Oeula+tEpsw3WKuB1+kDQyNqmgT09h8H2jubaHpKJXN1dSZXFGX/xM2isj+GhPyk0Q5lMLrDCt5
+      - MUX_TOKEN_ID=
+      - MUX_TOKEN_SECRET=
     networks:
       - app-network
     configs:
