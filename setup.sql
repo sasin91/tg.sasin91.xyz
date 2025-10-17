@@ -41,10 +41,11 @@ CREATE TABLE IF NOT EXISTS `live_streams` (
   `title` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `summary` varchar(255) DEFAULT NULL,
-  `live` tinyint(1) DEFAULT NULL,
+  `live` tinyint(1) DEFAULT 0,
   `start_date_and_time` datetime DEFAULT NULL,
-  `ingest` varchar(255) DEFAULT NULL,
-  `playlist` varchar(255) DEFAULT NULL,
+  `mux_stream_id` varchar(255) DEFAULT NULL,
+  `mux_stream_key` varchar(255) DEFAULT NULL,
+  `mux_playback_id` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
