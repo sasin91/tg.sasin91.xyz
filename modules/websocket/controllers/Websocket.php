@@ -1,13 +1,14 @@
 <?php
 
+require_once __DIR__ . '/../runtime/scaling/connections/Redis_connection.php';
+
 class Websocket extends Trongate
 {
     private ?Redis_connection $redis = null;
 
     public function _redis(): Redis_connection {
         if ($this->redis == null) {
-            $this->redis = new Redis_connection();
-            $this->redis->connect(
+            $this->redis = new Redis_connection(
                 REDIS_HOST,
                 REDIS_PORT
             );
