@@ -68,15 +68,13 @@ class Live_streams extends Trongate {
           $this->validation->set_rules('description', 'Description', 'required|min_length[2]');
           $this->validation->set_rules('summary', 'Summary', 'min_length[2]|max_length[255]');
           $this->validation->set_rules('start_date_and_time', 'Start Date And Time', 'required|valid_datetimepicker_us');
-          $this->validation->set_rules('ingest', 'Ingest', 'min_length[2]|max_length[255]');
-          $this->validation->set_rules('playlist', 'Playlist', 'min_length[2]|max_length[255]');
 
           $validated = $this->validation->run();
 
           if ($validated === true) {
             $data['start_date_and_time'] = str_replace(' at ', '', $data['start_date_and_time']);
             $data['start_date_and_time'] = date('Y-m-d H:i', strtotime($data['start_date_and_time']));
-            $data['live'] = $data['live'] !== '';
+            $data['live'] = 0; // Always start streams as offline
 
             // Create Mux live stream
             $mux_response = $this->_create_mux_live_stream();
@@ -120,7 +118,10 @@ class Live_streams extends Trongate {
     }
 
   public function start(): void {
+        $this->module('trongate_security');
         $this->module('localizations');
+
+        $token = $this->trongate_security->_make_sure_allowed();
         $t = $this->localizations->_translator(get_language());
 
         $update_id = (int) segment(3);
@@ -131,6 +132,7 @@ class Live_streams extends Trongate {
             'live_streams_module/css/go_live.css',
             'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'
         ];
+        $data['token'] = $token;
         $data['t'] = $t;
 
         $this->template('public', $data);
@@ -147,7 +149,7 @@ class Live_streams extends Trongate {
         $data = $this->get_data_from_db($update_id);
 
         if ($data === null) {
-            http_send_status(404);
+            http_response_code(404);
             echo json_encode(['message' => $t('Live stream not found.')]);
             return;
         }
@@ -306,15 +308,33 @@ class Live_streams extends Trongate {
           die();
       }
 
+      // Validate stream requirements
+      $data['stream_valid'] = $this->_validate_stream($data);
+
+      // Check actual Mux stream status if stream claims to be live
+      if ($data['live'] && !empty($data['mux_stream_id'])) {
+          $mux_status = $this->_check_mux_stream_status($data['mux_stream_id']);
+
+          // Update local status if Mux says it's not actually live
+          if (!$mux_status['is_live']) {
+              $this->model->update($update_id, ['live' => 0]);
+              $data['live'] = 0;
+
+              // Publish offline status update
+              $this->module('websocket');
+              $this->websocket->_publish('live_streams', json_encode([
+                  'status' => 'offline',
+                  'id' => $update_id,
+              ]));
+          }
+      }
+
       $data['view_file'] = 'watch';
       $data['additional_includes_top'] = [
           'live_streams_module/css/watch.css'
       ];
-      $data['additional_includes_btm'] = [
-        'https://cdn.jsdelivr.net/npm/hls.js@latest',
-        'live_streams_module/js/watch.js'
-      ];
-      
+      $data['additional_includes_btm'] = [];
+
       $this->template('public', $data);
     }
 
@@ -361,13 +381,11 @@ class Live_streams extends Trongate {
             $searchphrase = trim($_GET['searchphrase']);
             $params['title'] = '%'.$searchphrase.'%';
             $params['summary'] = '%'.$searchphrase.'%';
-            $params['ingest'] = '%'.$searchphrase.'%';
-            $params['playlist'] = '%'.$searchphrase.'%';
+            $params['mux_stream_id'] = '%'.$searchphrase.'%';
             $sql = 'select * from live_streams
             WHERE title LIKE :title
             OR summary LIKE :summary
-            OR ingest LIKE :ingest
-            OR playlist LIKE :playlist
+            OR mux_stream_id LIKE :mux_stream_id
             ORDER BY id desc';
             $all_rows = $this->model->query_bind($sql, $params, 'object');
         } else {
@@ -439,8 +457,6 @@ class Live_streams extends Trongate {
             $this->validation->set_rules('description', 'Description', 'required|min_length[2]');
             $this->validation->set_rules('summary', 'Summary', 'min_length[2]|max_length[255]');
             $this->validation->set_rules('start_date_and_time', 'Start Date And Time', 'required|valid_datetimepicker_us');
-            $this->validation->set_rules('ingest', 'Ingest', 'min_length[2]|max_length[255]');
-            $this->validation->set_rules('playlist', 'Playlist', 'min_length[2]|max_length[255]');
 
             $result = $this->validation->run();
 
@@ -631,7 +647,7 @@ class Live_streams extends Trongate {
         $data['title'] = post('title', true);
         $data['description'] = post('description', true);
         $data['summary'] = post('summary', true);
-        $data['live'] = post('live', true);
+        $data['live'] = 0; // Streams start as offline, go live via the control interface
         $data['start_date_and_time'] = post('start_date_and_time', true);
         $data['mux_stream_id'] = post('mux_stream_id', true);
         $data['mux_stream_key'] = post('mux_stream_key', true);
@@ -773,6 +789,54 @@ class Live_streams extends Trongate {
             'data' => $decoded_response,
             'http_code' => $http_code,
             'raw_response' => $response
+        ];
+    }
+
+    /**
+     * Validate if a stream has all required components for viewing
+     *
+     * @param array $stream_data
+     * @return bool
+     */
+    private function _validate_stream(array $stream_data): bool {
+        // Check if stream has required Mux fields
+        if (empty($stream_data['mux_stream_id']) ||
+            empty($stream_data['mux_playback_id'])) {
+            return false;
+        }
+
+        // Check if stream is configured properly
+        if (empty($stream_data['title'])) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check actual Mux stream status via API
+     *
+     * @param string $mux_stream_id
+     * @return array
+     */
+    private function _check_mux_stream_status(string $mux_stream_id): array {
+        $response = $this->_mux_request('GET', "/live-streams/{$mux_stream_id}");
+
+        if (!$response['success']) {
+            return [
+                'is_live' => false,
+                'status' => 'error',
+                'error' => $response['error'] ?? 'Failed to check stream status'
+            ];
+        }
+
+        $stream_data = $response['data']['data'] ?? [];
+        $status = $stream_data['status'] ?? 'idle';
+
+        return [
+            'is_live' => $status === 'active',
+            'status' => $status,
+            'mux_data' => $stream_data
         ];
     }
 }

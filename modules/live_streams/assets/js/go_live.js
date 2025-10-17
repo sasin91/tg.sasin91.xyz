@@ -1,58 +1,72 @@
 const muxStream = {
-    start: async function (id, token) {
-        const response = await fetch(`live_streams/mux_start/${id}`, {
-            method: 'POST',
-            headers: {
-                "Content-Type": "application/json",
-                "TrongateToken": token
-            }
+    start: function (id, token) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `/live_streams/mux_start/${id}`, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('TrongateToken', token);
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+
+                        if (xhr.status === 200) {
+                            toast(data.message, 'success');
+                            resolve(true);
+                        } else {
+                            toast(data.message, 'error');
+                            resolve(false);
+                        }
+                    } catch (e) {
+                        toast('Request failed', 'error');
+                        resolve(false);
+                    }
+                }
+            };
+
+            xhr.onerror = function() {
+                toast('Network error', 'error');
+                resolve(false);
+            };
+
+            xhr.send();
         });
-
-        const data = await response.json();
-
-        if (response.status !== 200) {
-            toast(data.message, 'error');
-            return false;
-        }
-
-        // Show streaming instructions
-        if (data.stream_key && data.rtmp_url) {
-            const streamingInfo = `
-                <div class="streaming-instructions">
-                    <h3>Streaming Active!</h3>
-                    <p>Your stream is now marked as live. Start broadcasting from your streaming software using:</p>
-                    <p><strong>RTMP URL:</strong> ${data.rtmp_url}</p>
-                    <p><strong>Stream Key:</strong> ${data.stream_key}</p>
-                    <p><strong>Playback URL:</strong> ${data.playback_url}</p>
-                </div>
-            `;
-
-            // Could display this in a modal or dedicated area
-            console.log('Stream started:', data);
-        }
-
-        toast(data.message, 'success');
-        return true;
     },
 
-    stop: async function (id, token) {
-        const response = await fetch(`live_streams/stop/${id}`, {
-            method: 'POST',
-            headers: {
-                "Content-Type": "application/json",
-                "TrongateToken": token
-            }
+    stop: function (id, token) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `/live_streams/stop/${id}`, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('TrongateToken', token);
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+
+                        if (xhr.status === 200) {
+                            toast(data.message, 'success');
+                            resolve(false); // Stream is now stopped
+                        } else {
+                            toast(data.message, 'error');
+                            resolve(false);
+                        }
+                    } catch (e) {
+                        toast('Request failed', 'error');
+                        resolve(false);
+                    }
+                }
+            };
+
+            xhr.onerror = function() {
+                toast('Network error', 'error');
+                resolve(false);
+            };
+
+            xhr.send();
         });
-
-        const data = await response.json();
-
-        if (response.status !== 200) {
-            toast(data.message, 'error');
-            return false;
-        }
-
-        toast(data.message, 'success');
-        return false; // Stream is now stopped
     }
 };
 
