@@ -50,8 +50,12 @@ final readonly class Frame implements Stringable
 
         // Unmask the payload data if it was masked
         if ($masked) {
-            for ($i = 0; $i < $payloadLength; ++$i) {
-                $payloadData[$i] = chr(ord($payloadData[$i]) ^ ord($maskingKey[$i % 4]));
+            if ($payloadLength > 0) {
+                // Use sodium for efficient XOR operation
+                // Extend masking key to match payload length
+                $extendedKey = str_repeat($maskingKey, (int) ceil($payloadLength / 4));
+                $extendedKey = substr($extendedKey, 0, $payloadLength);
+                $payloadData = sodium_crypto_stream_xor($payloadData, $extendedKey, str_repeat("\0", 24));
             }
         }
         
