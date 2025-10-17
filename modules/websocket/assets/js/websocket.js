@@ -55,7 +55,7 @@ async function generateFingerprint() {
         .join('');
 }
 
-class Socket {
+class WebsocketConnection {
     /**
      * @type {URL}
      */
