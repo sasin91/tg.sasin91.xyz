@@ -8,7 +8,6 @@
  */
 class Trongate {
 
-    private array $instances = [];
     private array $attributes = [];
     protected ?string $module_name = '';
     protected string $parent_module = '';
@@ -23,6 +22,17 @@ class Trongate {
         $this->module_name = $module_name;
     }
 
+    protected function memo(string $key, mixed $value = null): mixed {
+        // Prefix with module name for scoping
+        $scoped_key = $this->module_name . ':' . $key;
+        
+        if ($value !== null) {
+            return memo($scoped_key, $value);
+        }
+        
+        return memo($scoped_key);
+    }
+
     /**
      * Magic getter for framework classes and loaded modules.
      *
@@ -35,23 +45,14 @@ class Trongate {
             return $this->attributes[$key];
         }
 
-        if (in_array($key, ['model', 'validation', 'file', 'image', 'template'])) {
-            return $this->instances[$key] ??= match($key) {
-                'model' => new Model($this->module_name),
-                'validation' => new Validation(),
-                'file' => new File(),
-                'image' => new Image(),
-                'template' => new Template(),
-            };
+        if ($memo = memo($key)) {
+            return $memo;
         }
 
         $class_name = ucfirst($key);
-        $module_path = '../modules/' . $key . '/controllers/' . $class_name . '.php';
-        
-        if (file_exists($module_path)) {
-            require_once $module_path;
-            $this->attributes[$key] = new $class_name($key);
-            return $this->attributes[$key];
+
+        if ($module = $this->module($class_name)) {
+            return $module;
         }
 
         throw new Exception("Undefined property: " . get_class($this) . "::$key");
@@ -103,17 +104,16 @@ class Trongate {
      * Loads a module using the Modules class.
      *
      * @param string $target_module The name of the target module.
-     * @return void
+     * @return mixed
      */
-    protected function module(string $target_module): void {
+    protected function module(string $target_module): mixed {
         $access_key = Module_path::get_access_key($target_module);
-        
-        if (isset($this->attributes[$access_key])) {
-            return;
+
+        if ($memo = memo($access_key)) {
+            return $memo;
         }
 
-        $modules = new Modules;
-        $this->attributes[$access_key] = $modules->load_and_return($target_module);
+        return memo($access_key, $modules->load_and_return($target_module));
     }
 
     /**
