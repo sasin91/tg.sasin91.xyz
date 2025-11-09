@@ -16,7 +16,7 @@
 
 
 -- Dumping database structure for sasin91
-CREATE DATABASE IF NOT EXISTS `sasin91` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci */;
+CREATE DATABASE IF NOT EXISTS `sasin91` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
 USE `sasin91`;
 
 -- Dumping structure for tabel sasin91.chats
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `chats` (
   `created` datetime DEFAULT NULL,
   `live_streams_id` int(11) DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.chats: ~0 rows (tilnærmelsesvis)
 DELETE FROM `chats`;
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `live_streams` (
   `mux_stream_key` varchar(255) DEFAULT NULL,
   `mux_playback_id` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.live_streams: ~0 rows (tilnærmelsesvis)
 DELETE FROM `live_streams`;
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS `localizations` (
   `created` datetime DEFAULT current_timestamp(),
   `updated` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.localizations: ~96 rows (tilnærmelsesvis)
 DELETE FROM `localizations`;
@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS `trongate_administrators` (
   `password` varchar(60) DEFAULT NULL,
   `trongate_user_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.trongate_administrators: ~0 rows (tilnærmelsesvis)
 DELETE FROM `trongate_administrators`;
@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS `trongate_comments` (
   `update_id` int(11) DEFAULT NULL,
   `code` varchar(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.trongate_comments: ~0 rows (tilnærmelsesvis)
 DELETE FROM `trongate_comments`;
@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS `trongate_pages` (
   `published` tinyint(1) DEFAULT NULL,
   `created_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.trongate_pages: ~0 rows (tilnærmelsesvis)
 DELETE FROM `trongate_pages`;
@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS `trongate_tokens` (
   `expiry_date` int(11) DEFAULT NULL,
   `code` varchar(3) DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.trongate_tokens: ~1 rows (tilnærmelsesvis)
 DELETE FROM `trongate_tokens`;
@@ -238,7 +238,7 @@ CREATE TABLE IF NOT EXISTS `trongate_users` (
   `code` varchar(32) DEFAULT NULL,
   `user_level_id` int(11) DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.trongate_users: ~0 rows (tilnærmelsesvis)
 DELETE FROM `trongate_users`;
@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS `trongate_user_levels` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `level_title` varchar(125) DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table sasin91.trongate_user_levels: ~0 rows (tilnærmelsesvis)
 DELETE FROM `trongate_user_levels`;
