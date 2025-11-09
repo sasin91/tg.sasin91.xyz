@@ -93,44 +93,45 @@ function previous_url(): string {
     return $url;
 }
 
-
 /**
- * Generates an anchor (<a>) tag with optional attributes and XSS protection.
+ * Generates an HTML anchor tag with the given URL, text, and attributes.
  *
- * This function creates an anchor tag (`<a>`) with a given URL and text. 
- * The text is HTML-escaped unless it contains HTML content (e.g., Font Awesome icons).
- * The URL is always escaped to prevent XSS. Optional attributes (such as `rel` for external links) can be provided.
+ * This function creates an anchor tag (<a>) with the specified URL and text.
+ * If the URL is relative (does not start with 'http://', 'https://', or '//'),
+ * it prepends the BASE_URL constant to make it absolute.
+ * The URL is escaped using htmlspecialchars to prevent XSS attacks.
+ * The text is not escaped, allowing for HTML content.
+ * Additional attributes can be provided as an associative array.
  *
- * @param string $url The URL to link to. This is a required parameter.
- * @param string|null $text The link's inner text (optional). If null, the URL is used as the text.
- * @param array $attributes An optional associative array of attributes (e.g., ['rel' => 'noopener noreferrer']).
+ * Note: This function assumes that the BASE_URL constant is defined.
  *
- * @return string The complete anchor (<a>) tag as a string.
+ * @param string $url The URL for the anchor tag. Can be relative or absolute.
+ * @param string|null $text The inner HTML of the anchor tag. If null, the original $url is used.
+ * @param array $attributes Associative array of additional attributes (e.g., ['class' => 'btn']).
+ * @return string The generated HTML anchor tag.
  */
 function anchor(string $url, ?string $text = null, array $attributes = []): string {
-    // Default empty text is the same as URL
-    if ($text === null) {
-        $text = $url;
-    }
-
-    // Escape the URL to prevent XSS
-    $escaped_url = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
-
-    // If the text contains HTML (e.g., Font Awesome icons), don't escape it
-    if (strpos($text, '<') !== false) {
-        $escaped_text = $text; // Leave HTML content (icons) as is
+    // Determine if the URL is absolute (starts with http://, https://, or //)
+    if (preg_match('/^(https?:\/\/|\/\/)/i', $url)) {
+        $full_url = $url; // Use the URL as is
     } else {
-        $escaped_text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+        $full_url = BASE_URL . $url; // Prepend BASE_URL for relative paths
     }
 
-    // Add optional attributes (e.g., rel="noopener noreferrer" for external links)
-    $attr_str = '';
-    if (!empty($attributes)) {
-        foreach ($attributes as $key => $value) {
-            $attr_str .= ' ' . $key . '="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '"';
-        }
+    // Escape the full URL for safe use in HTML attributes
+    $escaped_url = htmlspecialchars($full_url, ENT_QUOTES, 'UTF-8');
+
+    // Use provided text, or fall back to the original $url if text is null
+    $text_to_use = $text ?? $url;
+
+    // Build the attributes string
+    $attr_string = '';
+    foreach ($attributes as $key => $value) {
+        $escaped_value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        $attr_string .= ' ' . $key . '="' . $escaped_value . '"';
     }
 
-    // Construct the anchor tag
-    return '<a href="' . $escaped_url . '"' . $attr_str . '>' . $escaped_text . '</a>';
+    // Construct and return the anchor tag
+    $tag = '<a href="' . $escaped_url . '"' . $attr_string . '>' . $text_to_use . '</a>';
+    return $tag;
 }
