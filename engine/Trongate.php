@@ -7,13 +7,6 @@
  * Provides core functionality for templates, views, modules, and file uploads.
  */
 class Trongate {
-
-    // Instance cache for lazy loading
-    private array $instances = [];
-    
-    // Loaded modules cache
-    private array $loaded_modules = [];
-    
     // Core properties
     protected ?string $module_name = '';
     protected string $parent_module = '';
@@ -28,6 +21,17 @@ class Trongate {
         $this->module_name = $module_name;
     }
 
+    protected function memo(string $key, mixed $value = null): mixed {
+        // Prefix with module name for scoping
+        $scoped_key = $this->module_name . ':' . $key;
+        
+        if ($value !== null) {
+            return memo($scoped_key, $value);
+        }
+        
+        return memo($scoped_key);
+    }
+
     /**
      * Magic getter for framework classes and loaded modules.
      *
@@ -36,13 +40,12 @@ class Trongate {
      * @throws Exception If the property is not supported.
      */
     public function __get(string $key): object {
-        // Check if it's a loaded module first
-        if (isset($this->loaded_modules[$key])) {
-            return $this->loaded_modules[$key];
+        // Check if it's already loaded
+        if ($memo = memo($key)) {
+            return $memo;
         }
-
-        // Handle core framework classes with lazy loading
-        $core_instance = match($key) {
+        
+        $value = match($key) {
             'db' => new DB($this->module_name),
             'model' => new Model($this->module_name),
             'validation' => new Validation(),
@@ -52,17 +55,19 @@ class Trongate {
             default => null
         };
 
-        if ($core_instance !== null) {
-            return $this->instances[$key] ??= $core_instance;
+        if ($value !== null) {
+            memo($key, $value);
+            return $value;
         }
 
         // If not a core class, try to load it as a module (automatic module loading)
-        try {
-            $this->module($key);
-            return $this->loaded_modules[$key];
-        } catch (Exception $e) {
+        $value = $this->module($key);
+
+        if ($value === null) {
             throw new Exception("Undefined property: " . get_class($this) . "::$key");
         }
+
+        return $value;
     }
 
     /**
@@ -100,12 +105,11 @@ class Trongate {
      * Loads a module and makes it available as a property.
      *
      * @param string $target_module The name of the target module.
-     * @return void
+     * @return mixed
      */
-    protected function module(string $target_module): void {
-        // Don't reload if already loaded
-        if (isset($this->loaded_modules[$target_module])) {
-            return;
+    protected function module(string $target_module): mixed {
+        if ($memo = memo($target_module)) {
+            return $memo;
         }
 
         // Build the controller path and class name
@@ -128,20 +132,20 @@ class Trongate {
             throw new Exception("Module class not found: {$controller_class}");
         }
         
-        // Create the module instance
         $module_instance = new $controller_class($target_module);
-        
-        // Store the module instance using the original target_module as key
-        $this->loaded_modules[$target_module] = $module_instance;
-        
+
+        memo($target_module, $module_instance);
+
         // For child modules, also store under the child module name for easy access
         if ($is_child_module) {
             $bits = explode('-', $target_module);
             if (count($bits) === 2) {
                 $child_module_name = strtolower($bits[1]);
-                $this->loaded_modules[$child_module_name] = $module_instance;
+                memo($child_module_name, $module_instance);
             }
         }
+
+        return $module_instance;
     }
 
     /**

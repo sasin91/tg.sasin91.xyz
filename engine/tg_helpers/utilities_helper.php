@@ -1,4 +1,21 @@
 <?php
+function memo(string|callable|null $key = null, mixed $value = null, mixed $default = null): mixed {
+    static $cache = [];
+    
+    if ($key === null) return $cache;
+    
+    if (is_callable($key)) {
+        $hash = spl_object_hash($key);
+        return $cache[$hash] ??= $key();
+    }
+    
+    if ($value !== null) {
+        return $cache[$key] = ($value instanceof Closure) ? $value() : $value;
+    }
+    
+    return $cache[$key] ?? $default;
+}
+
 /**
  * Outputs the given data as JSON in a prettified format, suitable for debugging and visualization.
  * This function is especially useful during development for inspecting data structures in a readable JSON format directly in the browser. 
