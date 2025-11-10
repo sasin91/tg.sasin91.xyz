@@ -141,7 +141,7 @@ class Trongate_pages extends Trongate {
         $token = $this->_make_sure_allowed();
 
         // Check if the image folder exists and is writable
-        $folder_path = APPPATH . 'modules/trongate_pages/assets/images/uploads';
+        $folder_path = APPPATH . 'modules/trongate_pages/images/uploads';
         if (!is_writable($folder_path)) {
             $data['view_module'] = 'trongate_pages';
             $this->view('permissions_error', $data);
@@ -262,7 +262,7 @@ class Trongate_pages extends Trongate {
             die();
         }
 
-        $destination_dir = '../modules/trongate_pages/assets/images/uploads';
+        $destination_dir = '../modules/trongate_pages/images/uploads';
 
         if ($current_img_dir !== '') {
             $destination_dir .= $current_img_dir;
@@ -293,7 +293,7 @@ class Trongate_pages extends Trongate {
             $destination_dir = str_replace('../', '/', $destination_dir);
             $abs_path1 = BASE_URL . 'trongate_pages_module/';
             $replace = $destination_dir . '/' . $fileName;
-            $picture_path = str_replace('/modules/trongate_pages/assets/', $abs_path1, $replace);
+            $picture_path = str_replace('/modules/trongate_pages/', $abs_path1, $replace);
             echo $picture_path;
             die();
         } else {
@@ -338,7 +338,7 @@ class Trongate_pages extends Trongate {
         $folder_name = strtolower($folder_name);
 
         // Check if the current img dir exists
-        $root_dir_path = APPPATH . 'modules/trongate_pages/assets/images/uploads/' . trim($current_img_dir);
+        $root_dir_path = APPPATH . 'modules/trongate_pages/images/uploads/' . trim($current_img_dir);
 
         if (!is_dir($root_dir_path)) {
             http_response_code(400);
@@ -411,8 +411,8 @@ class Trongate_pages extends Trongate {
             die();
         }
 
-        $old_folder_path = APPPATH . 'modules/trongate_pages/assets/images/uploads' . trim($current_img_dir) . '/' . $old_folder_name;
-        $new_folder_path = APPPATH . 'modules/trongate_pages/assets/images/uploads' . trim($current_img_dir) . '/' . $new_folder_name;
+        $old_folder_path = APPPATH . 'modules/trongate_pages/images/uploads' . trim($current_img_dir) . '/' . $old_folder_name;
+        $new_folder_path = APPPATH . 'modules/trongate_pages/images/uploads' . trim($current_img_dir) . '/' . $new_folder_name;
 
         // Check if the old folder exists
         if (!is_dir($old_folder_path)) {
@@ -468,7 +468,7 @@ class Trongate_pages extends Trongate {
         $current_img_dir = $data->currentImgDir ?? '';
 
         // Check if the current img dir exists
-        $root_dir_path = APPPATH . 'modules/trongate_pages/assets/images/uploads/';
+        $root_dir_path = APPPATH . 'modules/trongate_pages/images/uploads/';
 
         if ($current_img_dir !== '') {
             $current_img_dir = ltrim($current_img_dir, '/');
@@ -561,7 +561,7 @@ class Trongate_pages extends Trongate {
 
         if (isset($data->fileName)) {
             $file_name = $data->fileName;
-            $directory_name = 'modules/trongate_pages/assets/images/uploads';
+        $directory_name = 'modules/trongate_pages/images/uploads';
             $current_img_dir = $data->currentImgDir ?? '';
 
             if ($current_img_dir !== '') {
@@ -686,7 +686,7 @@ class Trongate_pages extends Trongate {
     }
 
     /**
-     * Fetches uploaded images from the 'assets/images/uploads' directory, within the 'Trongate Pages' module.
+     * Fetches uploaded images from the 'images/uploads' directory, within the 'Trongate Pages' module.
      * This function retrieves both directories and images within the specified directory.
      *
      * @return array Returns an array containing information about directories and images.
@@ -710,7 +710,7 @@ class Trongate_pages extends Trongate {
             $current_img_dir = $data->currentImgDir ?? '';
         }
 
-        $directory_name = 'modules/trongate_pages/assets/images/uploads';
+        $directory_name = 'modules/trongate_pages/images/uploads';
 
         if ($current_img_dir !== '') {
             $directory_name .= trim($current_img_dir);
@@ -1293,7 +1293,7 @@ class Trongate_pages extends Trongate {
         $directory_name = rtrim($directory_name, "/");
         $directory_path = APPPATH . $directory_name;
         $img_root_url = BASE_URL . 'trongate_pages_module/' . $directory_name;
-        $ditch = 'trongate_pages_module/modules/trongate_pages/assets/';
+        $ditch = 'trongate_pages_module/modules/trongate_pages/';
         $replace = 'trongate_pages_module/';
         $img_root_url = str_replace($ditch, $replace, $img_root_url);
 

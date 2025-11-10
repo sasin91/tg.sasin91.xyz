@@ -36,7 +36,7 @@ class Module_relations extends Trongate {
         $relation_names[] = $calling_module_name.'_and_'.$alt_module_name.'.json';
         $relation_names[] = $alt_module_name.'_and_'.$calling_module_name.'.json';
 
-        $dirpath = APPPATH.'modules/module_relations/assets/module_relations';
+        $dirpath = APPPATH.'modules/module_relations/module_relations';
 
         if (is_dir($dirpath)) {
             $files = scandir($dirpath);
@@ -187,7 +187,7 @@ class Module_relations extends Trongate {
 
         if(count($rows) == 0) {
             $filename = str_replace('associated_', '', $params['table_name']).'.json';
-            $dirpath = APPPATH.'modules/module_relations/assets/module_relations';
+            $dirpath = APPPATH.'modules/module_relations/module_relations';
             $settings_file_path = $dirpath.'/'.$filename;
 
             if (!file_exists($settings_file_path)) {

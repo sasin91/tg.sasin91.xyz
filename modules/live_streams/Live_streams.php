@@ -7,7 +7,7 @@
  * @property-read Mux_api $mux_api
  */
 class Live_streams extends Trongate {
-    const PICTURES_DIR = __DIR__.'/../assets/live_streams_pictures/';
+    const PICTURES_DIR = __DIR__.'/live_streams_pictures/';
     const PICTURES_URL_PATH = "live_streams_module/live_streams_pictures";
 
     private $default_limit = 20;

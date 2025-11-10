@@ -3,7 +3,7 @@
     baseUrl: '<?= BASE_URL ?>',
     trongatePagesId: '<?= $recordId ?>',
     trongatePagesToken: '<?= $trongate_token ?>',
-    imgRootDir: '../modules/trongate_pages/assets/images/uploads',
+    imgRootDir: '../modules/trongate_pages/images/uploads',
     currentImgDir: '',
     inviteClearHome: <?= $tgp_invite_clear_home ?>,
     pageBody: document.getElementsByTagName('body')[0],
