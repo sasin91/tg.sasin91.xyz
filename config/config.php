@@ -1,7 +1,7 @@
 <?php
 //The main config file
-define('WEBSOCKET_URL', $_ENV['WEBSOCKET_URL'] ?? 'wss://sasin91.test/ws');
-define('BASE_URL', $_ENV['BASE_URL'] ?? 'https://sasin91.test/');
+define('WEBSOCKET_URL', $_ENV['WEBSOCKET_URL'] ?? 'ws://localhost/sasin91/ws');
+define('BASE_URL', $_ENV['BASE_URL'] ?? 'http://localhost/sasin91/');
 define('ENV', 'dev');
 
 // Mux.com API configuration
