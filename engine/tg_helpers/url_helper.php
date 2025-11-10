@@ -67,19 +67,16 @@ function get_last_segment(): string {
  * Perform an HTTP redirect to the specified URL.
  *
  * @param string $target_url The URL to which the redirect should occur.
- * @param bool $die (Optional) Whether to stop the script after the redirect. Default is true.
  * @return void
  */
-function redirect(string $target_url, bool $die = true): void {
+function redirect(string $target_url): void {
     $str = substr($target_url, 0, 4);
     if ($str != 'http') {
         $target_url = BASE_URL . $target_url;
     }
 
     header('location: ' . $target_url);
-    if ($die) {
-        die();
-    }
+    die();
 }
 
 /**
@@ -97,50 +94,44 @@ function previous_url(): string {
 }
 
 /**
- * Generate an HTML anchor (link) element.
+ * Generates an HTML anchor tag with the given URL, text, and attributes.
  *
- * @param string $target_url The URL to link to.
- * @param mixed $text The link text or boolean value to indicate no link.
- * @param array|null $attributes (Optional) An associative array of HTML attributes for the anchor element.
- * @param string|null $additional_code (Optional) Additional HTML code to append to the anchor element.
- * @return string The HTML anchor element as a string.
+ * This function creates an anchor tag (<a>) with the specified URL and text.
+ * If the URL is relative (does not start with 'http://', 'https://', or '//'),
+ * it prepends the BASE_URL constant to make it absolute.
+ * The URL is escaped using htmlspecialchars to prevent XSS attacks.
+ * The text is not escaped, allowing for HTML content.
+ * Additional attributes can be provided as an associative array.
+ *
+ * Note: This function assumes that the BASE_URL constant is defined.
+ *
+ * @param string $url The URL for the anchor tag. Can be relative or absolute.
+ * @param string|null $text The inner HTML of the anchor tag. If null, the original $url is used.
+ * @param array $attributes Associative array of additional attributes (e.g., ['class' => 'btn']).
+ * @return string The generated HTML anchor tag.
  */
-function anchor(string $target_url, $text, ?array $attributes = null, ?string $additional_code = null): string {
-    $str = substr($target_url, 0, 4);
-    if ($str != 'http') {
-        $target_url = BASE_URL . $target_url;
+function anchor(string $url, ?string $text = null, array $attributes = []): string {
+    // Determine if the URL is absolute (starts with http://, https://, or //)
+    if (preg_match('/^(https?:\/\/|\/\/)/i', $url)) {
+        $full_url = $url; // Use the URL as is
+    } else {
+        $full_url = BASE_URL . $url; // Prepend BASE_URL for relative paths
     }
 
-    $text_type = gettype($text);
+    // Escape the full URL for safe use in HTML attributes
+    $escaped_url = htmlspecialchars($full_url, ENT_QUOTES, 'UTF-8');
 
-    if ($text_type === 'boolean') {
-        return $target_url;
+    // Use provided text, or fall back to the original $url if text is null
+    $text_to_use = $text ?? $url;
+
+    // Build the attributes string
+    $attr_string = '';
+    foreach ($attributes as $key => $value) {
+        $escaped_value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        $attr_string .= ' ' . $key . '="' . $escaped_value . '"';
     }
 
-    $extra = '';
-    if (isset($attributes)) {
-
-        if (isset($attributes['rewrite_url'])) {
-            unset($attributes['rewrite_url']);
-        } else {
-            //takes an assumed_url and returns the nice_url
-            foreach (CUSTOM_ROUTES as $key => $value) {
-                $pos = strpos($target_url, $value);
-                if (is_numeric($pos)) {
-                    $target_url = str_replace($value, $key, $target_url);
-                }
-            }
-        }
-
-        foreach ($attributes as $key => $value) {
-            $extra .= ' ' . $key . '="' . $value . '"';
-        }
-    }
-
-    if (isset($additional_code)) {
-        $extra .= ' ' . $additional_code;
-    }
-
-    $link = '<a href="' . $target_url . '"' . $extra . '>' . $text . '</a>';
-    return $link;
+    // Construct and return the anchor tag
+    $tag = '<a href="' . $escaped_url . '"' . $attr_string . '>' . $text_to_use . '</a>';
+    return $tag;
 }
