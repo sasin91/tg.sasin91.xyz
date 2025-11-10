@@ -10,7 +10,7 @@ class Localizations_model extends Model {
             'locale' => $locale,
         ];
 
-        $rows = $this->db->query_bind($sql, $params, 'assoc');
+        $rows = $this->db->query_bind($sql, $params, 'array') ?? [];
 
         $translations = [];
         foreach ($rows as $row) {
