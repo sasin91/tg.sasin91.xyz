@@ -22,19 +22,7 @@ class Localizations extends Trongate {
 
         $locale = $this->compose_locale($language);
 
-        $dbh = $this->model->get_PDO();
-        $stmt = $dbh->prepare(
-            'SELECT `key`, `value` FROM `localizations` WHERE `module` = :module AND `locale` = :locale'
-        );
-        $stmt->bindParam(':module', $module);
-        $stmt->bindParam(':locale', $locale);
-
-        $stmt->execute();
-
-        $translationsMap = [];
-        foreach ($stmt->getIterator() as $translation) {
-            $translationsMap[$translation['key']] = $translation['value'];
-        }
+        $translationsMap = $this->model->fetch_translations($module, $locale);
 
         return function (string $key, ?string $default = null) use($translationsMap): string
         {
