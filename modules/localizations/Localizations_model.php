@@ -6,8 +6,8 @@ class Localizations_model extends Model {
     public function fetch_translations(string $module, string $locale): array {
         $sql = 'SELECT `key`, `value` FROM `localizations` WHERE `module` = :module AND `locale` = :locale';
         $params = [
-            ':module' => $module,
-            ':locale' => $locale,
+            'module' => $module,
+            'locale' => $locale,
         ];
 
         $rows = $this->db->query_bind($sql, $params, 'assoc');
