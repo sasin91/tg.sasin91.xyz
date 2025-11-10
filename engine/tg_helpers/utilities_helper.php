@@ -1,4 +1,20 @@
 <?php
+function get_language(string $default = 'da'): string {
+    if (isset($_GET['lang']) && !empty($lang = $_GET['lang'])) {
+        return $lang;
+    }
+
+    if (!extension_loaded('intl')) {
+        return $default;
+    }
+
+    $lang = Locale::acceptFromHttp(
+        $_SERVER['HTTP_ACCEPT_LANGUAGE']
+    );
+
+    return $lang ?? $default;
+}
+
 function memo(string|callable|null $key = null, mixed $value = null, mixed $default = null): mixed {
     static $cache = [];
     
