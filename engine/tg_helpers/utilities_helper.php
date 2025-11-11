@@ -32,6 +32,14 @@ function memo(string|callable|null $key = null, mixed $value = null, mixed $defa
     return $cache[$key] ?? $default;
 }
 
+function encrypt(mixed $value): string {
+    return (new Encryption())->encrypt($value);
+}
+
+function decrypt(?string $value): mixed {
+    return (new Encryption())->decrypt($value);
+}
+
 /**
  * Outputs the given data as JSON in a prettified format, suitable for debugging and visualization.
  * This function is especially useful during development for inspecting data structures in a readable JSON format directly in the browser. 

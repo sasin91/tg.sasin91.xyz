@@ -5,6 +5,7 @@ session_start();
 require_once '../config/config.php';
 require_once '../config/custom_routing.php';
 require_once '../config/database.php';
+require_once '../config/encryption.php';
 require_once '../config/site_owner.php';
 require_once '../config/themes.php';
 
@@ -93,6 +94,19 @@ function attempt_custom_routing(string $url): string {
 define('APPPATH', str_replace("\\", "/", dirname(dirname(__FILE__)) . '/'));
 define('REQUEST_TYPE', $_SERVER['REQUEST_METHOD']);
 
+// Process URL and routing
+$data = get_segments();
+define('SEGMENTS', $data['segments']);
+define('ASSUMED_URL', $data['assumed_url']);
+
+// Helper files
+require_once 'tg_helpers/flashdata_helper.php';
+require_once 'tg_helpers/form_helper.php';
+require_once 'tg_helpers/string_helper.php';
+require_once 'tg_helpers/timedate_helper.php';
+require_once 'tg_helpers/url_helper.php';
+require_once 'tg_helpers/utilities_helper.php';
+
 /* --------------------------------------------------------------
  * Interceptor execution (early hooks)
  * -------------------------------------------------------------- */
@@ -120,16 +134,3 @@ if (defined('INTERCEPTORS') && is_array(INTERCEPTORS)) {
         $instance->{$method}();
     }
 }
-
-// Process URL and routing
-$data = get_segments();
-define('SEGMENTS', $data['segments']);
-define('ASSUMED_URL', $data['assumed_url']);
-
-// Helper files
-require_once 'tg_helpers/flashdata_helper.php';
-require_once 'tg_helpers/form_helper.php';
-require_once 'tg_helpers/string_helper.php';
-require_once 'tg_helpers/timedate_helper.php';
-require_once 'tg_helpers/url_helper.php';
-require_once 'tg_helpers/utilities_helper.php';
