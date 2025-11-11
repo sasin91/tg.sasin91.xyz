@@ -10,18 +10,12 @@
                     <div class="article-box">
                         <div class="article-header">
                             <h3 class="article-title">
-                                <a 
-                                    href="/blog/trongate" 
-                                    class="article-link"
-                                    mx-get="/blog/trongate"
-                                    mx-target="main"
-                                    mx-select="main"
-                                >Trongate PHP</a>
+                                <a href="blog/trongate">Trongate PHP</a>
                             </h3>
                             <time datetime="2024-09-14" class="article-date">14.9.2024</time>
                         </div>
                         <div class="article-image">
-                            <img src="/blog_module/images/the_framework.webp" alt="Trongate: The framework they don't want you to know about" />
+                            <img src="blog_module/images/the_framework.webp" alt="Trongate: The framework they don't want you to know about" />
                         </div>
                         <p class="article-text">
                           <?= nl2br($t('trongate.summary')) ?>

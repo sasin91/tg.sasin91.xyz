@@ -2,7 +2,7 @@
 
 <article id="article--trongate" class="container">
     <img alt="Trongate: The framework they don't want you to know about"
-         src="/blog_module/images/trongate_logo_trans_bg.png" class="trongate-logo">
+         src="blog_module/images/trongate_logo_trans_bg.png" class="trongate-logo">
     <h1 class="text-fancy"><?= $t('trongate.intro') ?></h1>
     <section id="trongate_mhavc">
         <h2 id="tagline"><?= $t('trongate.tagline') ?></h2>
@@ -10,7 +10,7 @@
             <blockquote>
                 <?= $t('trongate.mhavc') ?>
             </blockquote>
-            <img src="/blog_module/images/trongate_lvim_mangos-account.png"
+            <img src="blog_module/images/trongate_lvim_mangos-account.png"
                  id="trongate-mhavc-img"
                  alt="Trongate modular structure"
             >
@@ -28,7 +28,7 @@
     <section id="trongate_validation">
         <figure>
             <img alt="Trongate validation"
-                 src="/blog_module/images/trongate_lvim_validation.png"
+                 src="blog_module/images/trongate_lvim_validation.png"
             >
             <figcaption>
                 <svg xmlns="http://www.w3.org/2000/svg"

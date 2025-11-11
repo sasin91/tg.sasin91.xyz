@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <img alt="photo of me" src="/welcome_module/images/hero.png" class="hero-img"/>
+        <img alt="photo of me" src="welcome_module/images/hero.png" class="hero-img"/>
     </section>
 
     <section class="container" id="timeline">

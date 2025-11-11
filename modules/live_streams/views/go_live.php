@@ -61,4 +61,4 @@ $go_offline_content = ob_get_clean();
         </button>
     </section>
 </article>
-<script src="/live_streams_module/js/go_live.js"></script>
+<script src="live_streams_module/js/go_live.js"></script>

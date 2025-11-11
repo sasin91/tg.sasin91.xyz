@@ -86,7 +86,7 @@
 <script>
     document.addEventListener('websocket:init.done', function () {
         var live_streams_script = document.createElement('script');
-        live_streams_script.src = '/live_streams_module/js/live_streams.js';
+        live_streams_script.src = 'live_streams_module/js/live_streams.js';
         live_streams_script.type = 'text/javascript';
 
         live_streams_script.addEventListener('load', function () {
