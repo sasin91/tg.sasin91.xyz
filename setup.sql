@@ -19,6 +19,21 @@
 CREATE DATABASE IF NOT EXISTS `sasin91` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
 USE `sasin91`;
 
+-- Dumping structure for tabel sasin91.tenants
+CREATE TABLE IF NOT EXISTS `tenants` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `domain` varchar(255) NOT NULL,
+  `database_config` text NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `domain_unique` (`domain`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table sasin91.tenants
+DELETE FROM `tenants`;
+INSERT INTO `tenants` (`id`, `domain`, `database_config`) VALUES
+  (1, 'localhost', 'eyJpdiI6IjNhR0JzUHBQSHNrbzBnQTBDc3A3bUE9PSIsInZhbHVlIjoia0ZVV0NYZjRCdWdqTjNyVEtzdnFRRDdBWXBRQjR0Z1YwNjQ1dUg4empQOD0iLCJtYWMiOiJCRVhhYTNIN3BlQXlrU0ZEMzVYd1FIcFhuZXlwbVVEZCtadG04Rk40M2U4PSIsInNlcmlhbGl6ZWQiOnRydWV9');
+
 -- Dumping structure for tabel sasin91.chats
 CREATE TABLE IF NOT EXISTS `chats` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

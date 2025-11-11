@@ -9,6 +9,8 @@
  */
 class DB {
 
+    private static array $connection_pool = [];
+
     private $host;
     private $port;
     private $user;
@@ -22,6 +24,8 @@ class DB {
     private $debug = false;
     private $query_caveat = 'The query shown above is how the query would look <i>before</i> binding.';
     private $current_module;
+    private $pool_key;
+    private $db_group;
 
     /**
      * Constructor for the DB class.
@@ -34,6 +38,8 @@ class DB {
 
         // Default to 'default' group if none specified
         $db_group = $db_group ?? 'default';
+
+        $this->db_group = $db_group;
 
         // Load configuration from $databases array
         if (!isset($GLOBALS['databases'][$db_group])) {
@@ -62,9 +68,17 @@ class DB {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         );
 
+        $this->pool_key = $this->generatePoolKey($dsn);
+
+        if (isset(self::$connection_pool[$this->pool_key])) {
+            $this->dbh = self::$connection_pool[$this->pool_key];
+            return;
+        }
+
         // Establish database connection
         try {
             $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
+            self::$connection_pool[$this->pool_key] = $this->dbh;
         } catch (PDOException $e) {
             $this->error = $e->getMessage();
             echo $this->error;
@@ -985,6 +999,10 @@ class DB {
      * @return bool True on success, false on failure.
      */
     private function prepare_and_execute(string $sql, array $data = []): bool {
+        if (!$this->dbh instanceof PDO) {
+            throw new RuntimeException('Database connection not initialised for query execution.');
+        }
+
         $this->stmt = $this->dbh->prepare($sql);
 
         if (isset($data[0])) { //unnamed data
@@ -1023,6 +1041,16 @@ class DB {
         }
 
         return $sql;
+    }
+
+    /**
+     * Generate a unique key for the connection pool.
+     *
+     * @param string $dsn
+     * @return string
+     */
+    private function generatePoolKey(string $dsn): string {
+        return md5($dsn . '|' . $this->user);
     }
 
 }

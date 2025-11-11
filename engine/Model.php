@@ -47,15 +47,24 @@ class Model {
             return $this->db_instances[$key];
         }
 
+        $memo_key = $this->build_memo_key('db', $key);
+        if ($cached = memo($memo_key)) {
+            return $this->db_instances[$key] = $cached;
+        }
+
         // Handle primary database (always accessible)
         if ($key === 'db') {
-            return $this->db_instances[$key] = new DB($this->current_module);
+            $instance = new DB($this->current_module);
+            memo($memo_key, $instance);
+            return $this->db_instances[$key] = $instance;
         }
 
         // Handle alternative database groups
         // Check if this key corresponds to a configured database group
         if ($this->is_database_group($key)) {
-            return $this->db_instances[$key] = new DB($this->current_module, $key);
+            $instance = new DB($this->current_module, $key);
+            memo($memo_key, $instance);
+            return $this->db_instances[$key] = $instance;
         }
 
         // Not a valid database connection
@@ -81,7 +90,13 @@ class Model {
 
         // Load the model if not already loaded
         if (!isset($this->loaded_models[$module_name])) {
-            $this->load_model($module_name);
+            $memo_key = $this->build_memo_key('model', $module_name);
+
+            if ($cached = memo($memo_key)) {
+                $this->loaded_models[$module_name] = $cached;
+            } else {
+                $this->load_model($module_name);
+            }
         }
 
         // Get the model instance
@@ -130,6 +145,7 @@ class Model {
 
         // Instantiate the model and cache it
         $this->loaded_models[$module_name] = new $model_class($module_name);
+        memo($this->build_memo_key('model', $module_name), $this->loaded_models[$module_name]);
     }
 
     /**
@@ -168,6 +184,32 @@ class Model {
         // Model file not found
         $attempted_paths = implode("\n- ", $possible_paths);
         throw new Exception("Model file '{$model_class}.php' not found for module '{$module_name}'. Attempted paths:\n- {$attempted_paths}");
+    }
+
+    /**
+     * Build a memo cache key that takes the tenant context into account.
+     *
+     * @param string $type
+     * @param string $identifier
+     * @return string
+     */
+    private function build_memo_key(string $type, string $identifier): string {
+        $tenant = memo('tenant');
+        $tenant_key = 'global';
+
+        if (is_array($tenant)) {
+            $tenant_key = $tenant['id'] ?? $tenant['domain'] ?? $tenant_key;
+        } elseif (is_object($tenant)) {
+            $tenant_key = $tenant->id ?? $tenant->domain ?? $tenant_key;
+        }
+
+        return implode(':', [
+            'model',
+            $type,
+            $tenant_key,
+            $this->current_module ?? 'global',
+            $identifier
+        ]);
     }
 
 }
