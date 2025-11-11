@@ -1,4 +1,4 @@
-const TG_ADMIN = {
+const TG_APP = {
     MODAL_CONSTANTS: {
         Z_INDEX: 1000,
         Z_INDEX_HIDDEN: -4,
@@ -15,16 +15,16 @@ const TG_ADMIN = {
     init() {
         // Track mouse events for proper modal closing behavior
         document.addEventListener("mousedown", (event) => {
-            TG_ADMIN.mousedownEl = event.target;
+            TG_APP.mousedownEl = event.target;
         });
 
         document.addEventListener("mouseup", (event) => {
-            TG_ADMIN.mouseupEl = event.target;
+            TG_APP.mouseupEl = event.target;
         });
 
         // Handle clicks to close modal when clicking outside
         document.addEventListener("click", (event) => {
-            if (TG_ADMIN.openingModal) {
+            if (TG_APP.openingModal) {
                 return;
             }
 
@@ -33,11 +33,11 @@ const TG_ADMIN = {
             if (iframeModalContainer) {
                 const iframeModal = iframeModalContainer.querySelector(".trongate-iframe-modal-content");
                 const clickedOutside = iframeModal && !iframeModal.contains(event.target);
-                const mousedownInsideModal = iframeModal && iframeModal.contains(TG_ADMIN.mousedownEl);
-                const mouseupInsideModal = iframeModal && iframeModal.contains(TG_ADMIN.mouseupEl);
+                const mousedownInsideModal = iframeModal && iframeModal.contains(TG_APP.mousedownEl);
+                const mouseupInsideModal = iframeModal && iframeModal.contains(TG_APP.mouseupEl);
 
                 if (clickedOutside && !mousedownInsideModal && !mouseupInsideModal) {
-                    TG_ADMIN._closeModal();
+                    TG_APP._closeModal();
                 }
                 return;
             }
@@ -47,11 +47,11 @@ const TG_ADMIN = {
             if (modalContainer) {
                 const modal = modalContainer.querySelector(".modal");
                 const clickedOutside = modal && !modal.contains(event.target);
-                const mousedownInsideModal = modal && modal.contains(TG_ADMIN.mousedownEl);
-                const mouseupInsideModal = modal && modal.contains(TG_ADMIN.mouseupEl);
+                const mousedownInsideModal = modal && modal.contains(TG_APP.mousedownEl);
+                const mouseupInsideModal = modal && modal.contains(TG_APP.mouseupEl);
 
                 if (clickedOutside && !mousedownInsideModal && !mouseupInsideModal) {
-                    TG_ADMIN._closeModal();
+                    TG_APP._closeModal();
                 }
             }
         });
@@ -62,14 +62,14 @@ const TG_ADMIN = {
                 // Check for iframe modal first
                 const iframeModalContainer = document.getElementById("trongate-iframe-modal");
                 if (iframeModalContainer) {
-                    TG_ADMIN._closeModal();
+                    TG_APP._closeModal();
                     return;
                 }
 
                 // Then check for regular modal
                 const modalContainer = document.getElementById("modal-container");
                 if (modalContainer) {
-                    TG_ADMIN._closeModal();
+                    TG_APP._closeModal();
                 }
             }
         });
@@ -78,15 +78,15 @@ const TG_ADMIN = {
     _openModal(modalIdOrUrl, width = null, height = null) {
         // If width and height are provided, treat as iframe modal
         if (width !== null && height !== null) {
-            TG_ADMIN._openIframeModal(modalIdOrUrl, width, height);
+            TG_APP._openIframeModal(modalIdOrUrl, width, height);
             return;
         }
 
         // Original modal functionality for DOM elements
-        TG_ADMIN.openingModal = true;
+        TG_APP.openingModal = true;
         setTimeout(() => {
-            TG_ADMIN.openingModal = false;
-        }, TG_ADMIN.MODAL_CONSTANTS.OPENING_DELAY);
+            TG_APP.openingModal = false;
+        }, TG_APP.MODAL_CONSTANTS.OPENING_DELAY);
 
         // Don't create if already exists
         let pageOverlay = document.getElementById("overlay");
@@ -97,13 +97,13 @@ const TG_ADMIN = {
         // Create modal container
         const modalContainer = document.createElement("div");
         modalContainer.setAttribute("id", "modal-container");
-        modalContainer.style.zIndex = TG_ADMIN.MODAL_CONSTANTS.Z_INDEX_CONTAINER;
+        modalContainer.style.zIndex = TG_APP.MODAL_CONSTANTS.Z_INDEX_CONTAINER;
         document.body.appendChild(modalContainer);
 
         // Create overlay
         pageOverlay = document.createElement("div");
         pageOverlay.setAttribute("id", "overlay");
-        pageOverlay.style.zIndex = TG_ADMIN.MODAL_CONSTANTS.Z_INDEX_OVERLAY;
+        pageOverlay.style.zIndex = TG_APP.MODAL_CONSTANTS.Z_INDEX_OVERLAY;
         document.body.appendChild(pageOverlay);
 
         // Get the target modal (support both CSS selector and ID)
@@ -121,7 +121,7 @@ const TG_ADMIN = {
         const newModal = document.createElement("div");
         newModal.className = "modal";
         newModal.id = modalIdOrUrl;
-        newModal.style.zIndex = TG_ADMIN.MODAL_CONSTANTS.Z_INDEX;
+        newModal.style.zIndex = TG_APP.MODAL_CONSTANTS.Z_INDEX;
         newModal.innerHTML = targetModalContent;
         modalContainer.appendChild(newModal);
 
@@ -132,16 +132,16 @@ const TG_ADMIN = {
             
             // Use CSS variable for margin-top if available, otherwise use default
             const marginTop = getComputedStyle(document.documentElement)
-                .getPropertyValue("--modal-margin-top").trim() || TG_ADMIN.MODAL_CONSTANTS.DEFAULT_MARGIN_TOP;
+                .getPropertyValue("--modal-margin-top").trim() || TG_APP.MODAL_CONSTANTS.DEFAULT_MARGIN_TOP;
             newModal.style.marginTop = marginTop;
         });
     },
 
     _openIframeModal(targetUrl, width, height) {
-        TG_ADMIN.openingModal = true;
+        TG_APP.openingModal = true;
         setTimeout(() => {
-            TG_ADMIN.openingModal = false;
-        }, TG_ADMIN.MODAL_CONSTANTS.OPENING_DELAY);
+            TG_APP.openingModal = false;
+        }, TG_APP.MODAL_CONSTANTS.OPENING_DELAY);
 
         // Create iframe modal overlay
         const iframeModalOverlay = document.createElement("div");
@@ -149,7 +149,7 @@ const TG_ADMIN = {
         iframeModalOverlay.style.cssText = `
             display: block;
             position: fixed;
-            z-index: ${TG_ADMIN.MODAL_CONSTANTS.Z_INDEX_CONTAINER + 1};
+            z-index: ${TG_APP.MODAL_CONSTANTS.Z_INDEX_CONTAINER + 1};
             left: 0;
             top: 0;
             width: 100%;
@@ -226,7 +226,7 @@ const TG_ADMIN = {
         const openModal = modalContainer.querySelector(".modal");
         if (openModal) {
             // Reset modal styles and move it back to body
-            openModal.style.zIndex = TG_ADMIN.MODAL_CONSTANTS.Z_INDEX_HIDDEN;
+            openModal.style.zIndex = TG_APP.MODAL_CONSTANTS.Z_INDEX_HIDDEN;
             openModal.style.opacity = 0;
             openModal.style.marginTop = "-160px"; // Trongate's default hidden position
             openModal.style.display = "none";
@@ -248,8 +248,8 @@ const TG_ADMIN = {
 };
 
 // Initialize the app
-TG_ADMIN.init();
+TG_APP.init();
 
 // Make functions globally available
-window.openModal = window.openModal || TG_ADMIN._openModal;
-window.closeModal = window.closeModal || TG_ADMIN._closeModal;
+window.openModal = window.openModal || TG_APP._openModal;
+window.closeModal = window.closeModal || TG_APP._closeModal;
